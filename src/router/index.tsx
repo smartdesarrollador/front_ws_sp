@@ -19,6 +19,21 @@ export const router = createBrowserRouter([
                 lazy: () =>
                   import('@/pages/DashboardPage').then((m) => ({ Component: m.default })),
               },
+              {
+                path: 'tasks',
+                lazy: () =>
+                  import('@/pages/TasksPage').then((m) => ({ Component: m.default })),
+              },
+              {
+                path: 'calendar',
+                lazy: () =>
+                  import('@/pages/CalendarPage').then((m) => ({ Component: m.default })),
+              },
+              {
+                path: 'notes',
+                lazy: () =>
+                  import('@/pages/NotesPage').then((m) => ({ Component: m.default })),
+              },
             ],
           },
         ],
