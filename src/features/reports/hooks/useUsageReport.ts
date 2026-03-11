@@ -1,0 +1,13 @@
+import { useQuery } from '@tanstack/react-query'
+import { apiClient } from '@/lib/axios'
+import type { UsageData } from '../types'
+
+export function useUsageReport() {
+  const { data: usage, isLoading } = useQuery({
+    queryKey: ['ws-reports-usage'],
+    queryFn: () => apiClient.get<UsageData>('/app/reports/usage/').then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  return { usage, isLoading }
+}
