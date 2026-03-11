@@ -69,6 +69,11 @@ export const router = createBrowserRouter([
                 lazy: () =>
                   import('@/pages/SSLCertsPage').then((m) => ({ Component: m.default })),
               },
+              {
+                path: 'forms',
+                lazy: () =>
+                  import('@/pages/FormsPage').then((m) => ({ Component: m.default })),
+              },
             ],
           },
         ],
