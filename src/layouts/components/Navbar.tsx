@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Menu, Bell, Sun, Moon, Settings, LogOut, ChevronDown, User, Shield } from 'lucide-react'
+import { Menu, Sun, Moon, Settings, LogOut, ChevronDown, User, Shield } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useUiStore } from '@/store/uiStore'
 import { useAuth } from '@/features/auth/AuthContext'
 import { usePermissions } from '@/hooks/usePermissions'
 import LanguageSwitcher from './LanguageSwitcher'
+import { NotificationDropdown } from '@/features/notifications/components/NotificationDropdown'
 
 function Navbar() {
   const navigate = useNavigate()
@@ -89,13 +90,8 @@ function Navbar() {
             )}
           </button>
 
-          {/* Notifications — static bell (no hook in PASO 4) */}
-          <button
-            aria-label="Notificaciones"
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-          </button>
+          {/* Notifications */}
+          <NotificationDropdown />
 
           {/* User menu */}
           <div className="relative">
