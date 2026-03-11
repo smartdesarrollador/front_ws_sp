@@ -54,6 +54,11 @@ export const router = createBrowserRouter([
                 lazy: () =>
                   import('@/pages/ProjectsPage').then((m) => ({ Component: m.default })),
               },
+              {
+                path: 'env-vars',
+                lazy: () =>
+                  import('@/pages/EnvVarsPage').then((m) => ({ Component: m.default })),
+              },
             ],
           },
         ],
