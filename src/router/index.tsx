@@ -64,6 +64,11 @@ export const router = createBrowserRouter([
                 lazy: () =>
                   import('@/pages/SSHKeysPage').then((m) => ({ Component: m.default })),
               },
+              {
+                path: 'ssl-certs',
+                lazy: () =>
+                  import('@/pages/SSLCertsPage').then((m) => ({ Component: m.default })),
+              },
             ],
           },
         ],
