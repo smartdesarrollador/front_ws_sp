@@ -17,6 +17,7 @@ import {
   BarChart2,
   User,
   Settings,
+  LifeBuoy,
   type LucideIcon,
 } from 'lucide-react'
 import { useUiStore } from '@/store/uiStore'
@@ -75,6 +76,7 @@ const MENU_GROUPS: MenuGroup[] = [
   {
     group: 'CUENTA',
     items: [
+      { label: 'Soporte', to: '/support', icon: LifeBuoy, permission: null, feature: null },
       { label: 'Perfil', to: '/profile', icon: User, permission: null, feature: null },
       { label: 'Configuración', to: '/settings', icon: Settings, permission: null, feature: null },
     ],
