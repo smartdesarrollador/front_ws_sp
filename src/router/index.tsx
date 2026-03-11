@@ -34,6 +34,16 @@ export const router = createBrowserRouter([
                 lazy: () =>
                   import('@/pages/NotesPage').then((m) => ({ Component: m.default })),
               },
+              {
+                path: 'contacts',
+                lazy: () =>
+                  import('@/pages/ContactsPage').then((m) => ({ Component: m.default })),
+              },
+              {
+                path: 'bookmarks',
+                lazy: () =>
+                  import('@/pages/BookmarksPage').then((m) => ({ Component: m.default })),
+              },
             ],
           },
         ],

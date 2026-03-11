@@ -10,6 +10,10 @@ export interface DashboardSummary {
     projects_limit: number | null
     notes: number
     notes_limit: number | null
+    contacts?: number
+    contacts_limit?: number | null
+    bookmarks?: number
+    bookmarks_limit?: number | null
   }
 }
 
