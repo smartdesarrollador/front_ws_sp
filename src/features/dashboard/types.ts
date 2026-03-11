@@ -14,6 +14,8 @@ export interface DashboardSummary {
     contacts_limit?: number | null
     bookmarks?: number
     bookmarks_limit?: number | null
+    snippets?: number
+    snippets_limit?: number | null
   }
 }
 

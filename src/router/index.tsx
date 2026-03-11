@@ -44,6 +44,11 @@ export const router = createBrowserRouter([
                 lazy: () =>
                   import('@/pages/BookmarksPage').then((m) => ({ Component: m.default })),
               },
+              {
+                path: 'snippets',
+                lazy: () =>
+                  import('@/pages/SnippetsPage').then((m) => ({ Component: m.default })),
+              },
             ],
           },
         ],
