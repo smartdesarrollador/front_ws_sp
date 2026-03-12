@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X, Eye, EyeOff } from 'lucide-react'
 import { useCreateSSHKey } from '../hooks/useCreateSSHKey'
 import { useUpdateSSHKey } from '../hooks/useUpdateSSHKey'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { SSHKey } from '../types'
 
 const schema = z.object({
@@ -24,6 +25,8 @@ interface Props {
 }
 
 export function SSHKeyModal({ onClose, sshKey }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, true)
   const createSSHKey = useCreateSSHKey()
   const updateSSHKey = useUpdateSSHKey()
   const [showPrivateKey, setShowPrivateKey] = useState(false)
@@ -102,14 +105,15 @@ export function SSHKeyModal({ onClose, sshKey }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="sshkey-modal-title"
+        aria-labelledby="ssh-key-modal-title"
         className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2
-            id="sshkey-modal-title"
+            id="ssh-key-modal-title"
             className="text-lg font-semibold text-gray-900 dark:text-gray-100"
           >
             {isEditing ? 'Editar clave SSH' : 'Nueva Clave SSH'}

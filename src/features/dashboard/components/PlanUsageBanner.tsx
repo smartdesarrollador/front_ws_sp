@@ -64,6 +64,11 @@ export function PlanUsageBanner({ usage, isLoading }: Props) {
               </div>
               <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700">
                 <div
+                  role="progressbar"
+                  aria-valuenow={pct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${label}: ${current} de ${limit}`}
                   className={`h-2 rounded-full ${barColor(pct)}`}
                   style={{ width: `${Math.min(pct, 100)}%` }}
                 />

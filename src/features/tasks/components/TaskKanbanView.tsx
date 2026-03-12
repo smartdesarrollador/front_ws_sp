@@ -20,9 +20,9 @@ export function TaskKanbanView({ tasks, isLoading, onEdit, onDelete }: Props) {
         return (
           <div key={status} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {config.label}
-              </h3>
+              </h2>
               <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
                 {isLoading ? '?' : columnTasks.length}
               </span>

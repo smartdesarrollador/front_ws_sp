@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X, Plus, Trash2 } from 'lucide-react'
 import { useCreateForm } from '../hooks/useCreateForm'
 import { useUpdateForm } from '../hooks/useUpdateForm'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { Form, QuestionType } from '../types'
 
 const schema = z.object({
@@ -36,6 +37,8 @@ const QUESTION_TYPES: { value: QuestionType; label: string }[] = [
 ]
 
 export default function FormModal({ form, onClose }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, true)
   const isEdit = !!form
   const createForm = useCreateForm()
   const updateForm = useUpdateForm()
@@ -116,6 +119,7 @@ export default function FormModal({ form, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="form-modal-title"

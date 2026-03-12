@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X, Trash2 } from 'lucide-react'
 import { useProjectMembers, useInviteMember, useRemoveMember } from '../hooks/useProjectMembers'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { MemberRole } from '../types'
 
 const schema = z.object({
@@ -25,6 +26,8 @@ interface Props {
 }
 
 export function ShareProjectModal({ projectId, onClose }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, true)
   const { data: members, isLoading } = useProjectMembers(projectId)
   const inviteMember = useInviteMember()
   const removeMember = useRemoveMember()
@@ -54,6 +57,7 @@ export function ShareProjectModal({ projectId, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-modal-title"

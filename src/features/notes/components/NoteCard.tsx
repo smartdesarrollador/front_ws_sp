@@ -41,9 +41,9 @@ export function NoteCard({ note, onEdit, onDelete }: Props) {
       </div>
 
       {/* Title */}
-      <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate pr-6 mb-1">
+      <h2 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate pr-6 mb-1">
         {note.title}
-      </h3>
+      </h2>
 
       {/* Content preview */}
       <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-3 mb-3">

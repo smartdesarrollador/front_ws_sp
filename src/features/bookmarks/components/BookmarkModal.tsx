@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,6 +6,7 @@ import { X } from 'lucide-react'
 import { useCreateBookmark } from '../hooks/useCreateBookmark'
 import { useUpdateBookmark } from '../hooks/useUpdateBookmark'
 import { useCollections } from '../hooks/useCollections'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { Bookmark } from '../types'
 
 const schema = z.object({
@@ -25,6 +26,8 @@ interface Props {
 }
 
 export function BookmarkModal({ bookmark, onClose }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, true)
   const createBookmark = useCreateBookmark()
   const updateBookmark = useUpdateBookmark()
   const { data: collections = [] } = useCollections()
@@ -108,6 +111,7 @@ export function BookmarkModal({ bookmark, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="bookmark-modal-title"

@@ -59,9 +59,9 @@ export function ProjectCard({ project, onSelect, onEdit, onDelete }: Props) {
             >
               {project.name.charAt(0).toUpperCase()}
             </div>
-            <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
+            <h2 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
               {project.name}
-            </h3>
+            </h2>
           </div>
 
           {/* Action buttons — visible on hover */}

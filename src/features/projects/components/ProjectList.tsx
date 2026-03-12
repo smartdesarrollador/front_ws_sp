@@ -26,9 +26,9 @@ export function ProjectList({ projects, viewMode, onSelect, onEdit, onDelete, is
     return (
       <div className="text-center py-16">
         <FolderOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-        <h3 className="text-base font-medium text-gray-900 dark:text-gray-100 mb-1">
+        <h2 className="text-base font-medium text-gray-900 dark:text-gray-100 mb-1">
           No hay proyectos
-        </h3>
+        </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Crea tu primer proyecto para comenzar
         </p>

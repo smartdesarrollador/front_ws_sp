@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { CheckCircle2, X } from 'lucide-react'
 import { useCreateTicket } from '../hooks/useCreateTicket'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { NewTicketRequest } from '../types'
 
 const schema = z.object({
@@ -21,6 +22,8 @@ interface Props {
 }
 
 export function NewTicketModal({ open, onClose }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, open)
   const [step, setStep] = useState<1 | 2>(1)
   const createTicket = useCreateTicket()
 
@@ -56,9 +59,15 @@ export function NewTicketModal({ open, onClose }: Props) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ticket-modal-title"
+        className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6"
+      >
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
@@ -69,7 +78,7 @@ export function NewTicketModal({ open, onClose }: Props) {
 
         {step === 1 ? (
           <>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Nuevo ticket de soporte</h2>
+            <h2 id="ticket-modal-title" className="text-lg font-semibold text-gray-900 mb-4">Nuevo ticket de soporte</h2>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Asunto</label>

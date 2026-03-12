@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X } from 'lucide-react'
 import { useCreateSSLCert } from '../hooks/useCreateSSLCert'
 import { useUpdateSSLCert } from '../hooks/useUpdateSSLCert'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { SSLCertificate } from '../types'
 
 const schema = z.object({
@@ -24,6 +25,8 @@ interface SSLCertModalProps {
 }
 
 export function SSLCertModal({ cert, onClose }: SSLCertModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, true)
   const isEditing = !!cert
   const createCert = useCreateSSLCert()
   const updateCert = useUpdateSSLCert()
@@ -95,13 +98,14 @@ export function SSLCertModal({ cert, onClose }: SSLCertModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="sslcert-modal-title"
+        aria-labelledby="ssl-cert-modal-title"
         className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6"
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 id="sslcert-modal-title" className="text-lg font-semibold text-gray-900">
+          <h2 id="ssl-cert-modal-title" className="text-lg font-semibold text-gray-900">
             {isEditing ? 'Editar Certificado SSL' : 'Nuevo Certificado SSL'}
           </h2>
           <button onClick={onClose} aria-label="Cerrar modal" className="p-1 text-gray-400 hover:text-gray-600">

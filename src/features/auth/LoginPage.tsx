@@ -84,10 +84,11 @@ export default function LoginPage() {
         </p>
         <form onSubmit={handleMfaSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="mfa-code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Código de verificación
             </label>
             <input
+              id="mfa-code"
               type="text"
               maxLength={6}
               value={mfaCode}
@@ -123,10 +124,11 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Email
           </label>
           <input
+            id="login-email"
             type="email"
             {...register('email')}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
@@ -137,10 +139,11 @@ export default function LoginPage() {
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Contraseña
           </label>
           <input
+            id="login-password"
             type="password"
             {...register('password')}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"

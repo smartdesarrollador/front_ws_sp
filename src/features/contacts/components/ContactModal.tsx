@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,6 +6,7 @@ import { X } from 'lucide-react'
 import { useCreateContact } from '../hooks/useCreateContact'
 import { useUpdateContact } from '../hooks/useUpdateContact'
 import { useContactGroups } from '../hooks/useContactGroups'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { Contact } from '../types'
 
 const schema = z.object({
@@ -26,6 +27,8 @@ interface Props {
 }
 
 export function ContactModal({ contact, onClose }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, true)
   const createContact = useCreateContact()
   const updateContact = useUpdateContact()
   const { data: groups = [] } = useContactGroups()
@@ -106,6 +109,7 @@ export function ContactModal({ contact, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="contact-modal-title"
