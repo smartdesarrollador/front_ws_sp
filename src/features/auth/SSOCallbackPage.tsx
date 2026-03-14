@@ -25,7 +25,7 @@ export default function SSOCallbackPage() {
     const validate = async () => {
       try {
         const { data } = await publicClient.post<SSOValidateResponse>(
-          '/auth/sso/validate',
+          '/auth/sso/validate/',
           { sso_token: ssoToken },
         )
         useAuthStore.getState().setUser(data.user)

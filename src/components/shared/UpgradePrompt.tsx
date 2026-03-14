@@ -1,5 +1,6 @@
-import { useNavigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
+
+const HUB_URL = import.meta.env.VITE_HUB_URL ?? 'http://localhost:5175'
 
 interface Props {
   feature: string
@@ -8,8 +9,6 @@ interface Props {
 }
 
 function UpgradePrompt({ feature, title, message }: Props) {
-  const navigate = useNavigate()
-
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mb-4">
@@ -21,12 +20,12 @@ function UpgradePrompt({ feature, title, message }: Props) {
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
         {message ?? 'Actualiza tu plan para acceder a esta función.'}
       </p>
-      <button
-        onClick={() => navigate('/subscription')}
+      <a
+        href={`${HUB_URL}/subscription`}
         className="btn btn-primary"
       >
         Actualizar plan
-      </button>
+      </a>
     </div>
   )
 }
