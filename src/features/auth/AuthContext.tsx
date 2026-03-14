@@ -35,8 +35,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const savedUser = localStorage.getItem('ws-authUser')
         const savedTenant = localStorage.getItem('ws-authTenant')
-        if (savedUser) setUser(JSON.parse(savedUser) as User)
-        if (savedTenant) setTenant(JSON.parse(savedTenant) as Tenant)
+        try {
+          if (savedUser) setUser(JSON.parse(savedUser) as User)
+        } catch {
+          localStorage.removeItem('ws-authUser')
+        }
+        try {
+          if (savedTenant) setTenant(JSON.parse(savedTenant) as Tenant)
+        } catch {
+          localStorage.removeItem('ws-authTenant')
+        }
+
+        if (data.user) setUser(data.user)
+        if (data.tenant) setTenant(data.tenant)
+        if (data.user) localStorage.setItem('ws-authUser', JSON.stringify(data.user))
+        if (data.tenant) localStorage.setItem('ws-authTenant', JSON.stringify(data.tenant))
       } catch {
         clearAuth()
         localStorage.removeItem('ws-refreshToken')

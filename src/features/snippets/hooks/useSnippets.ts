@@ -3,8 +3,7 @@ import { apiClient } from '@/lib/axios'
 import type { CodeSnippet, SnippetFiltersState } from '../types'
 
 interface SnippetsResponse {
-  results: CodeSnippet[]
-  count: number
+  snippets: CodeSnippet[]
 }
 
 export function useSnippets(filters: SnippetFiltersState) {
@@ -19,6 +18,6 @@ export function useSnippets(filters: SnippetFiltersState) {
       return data
     },
     staleTime: 30_000,
-    select: (data) => ({ snippets: data.results, total: data.count }),
+    select: (data) => ({ snippets: data.snippets, total: data.snippets.length }),
   })
 }

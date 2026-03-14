@@ -11,7 +11,7 @@ import type { Task } from '../types'
 const schema = z.object({
   title: z.string().min(1, 'El título es requerido').max(200, 'Máximo 200 caracteres'),
   description: z.string().optional(),
-  priority: z.enum(['alta', 'media', 'baja'] as const),
+  priority: z.enum(['high', 'medium', 'low'] as const),
   status: z.enum(['todo', 'in_progress', 'in_review', 'done'] as const),
   due_date: z.string().optional().nullable(),
 })
@@ -40,7 +40,7 @@ export function TaskModal({ task, open, onClose }: Props) {
     defaultValues: {
       title: '',
       description: '',
-      priority: 'media',
+      priority: 'medium',
       status: 'todo',
       due_date: null,
     },
@@ -60,7 +60,7 @@ export function TaskModal({ task, open, onClose }: Props) {
           : {
               title: '',
               description: '',
-              priority: 'media',
+              priority: 'medium',
               status: 'todo',
               due_date: null,
             },
@@ -165,9 +165,9 @@ export function TaskModal({ task, open, onClose }: Props) {
                 {...register('priority')}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="alta">Alta</option>
-                <option value="media">Media</option>
-                <option value="baja">Baja</option>
+                <option value="high">Alta</option>
+                <option value="medium">Media</option>
+                <option value="low">Baja</option>
               </select>
             </div>
             <div>

@@ -16,9 +16,9 @@ const STATUS_OPTIONS: { value: TaskStatus | ''; label: string }[] = [
 
 const PRIORITY_OPTIONS: { value: TaskPriority | ''; label: string }[] = [
   { value: '', label: 'Todas las prioridades' },
-  { value: 'alta', label: 'Alta' },
-  { value: 'media', label: 'Media' },
-  { value: 'baja', label: 'Baja' },
+  { value: 'high', label: 'Alta' },
+  { value: 'medium', label: 'Media' },
+  { value: 'low', label: 'Baja' },
 ]
 
 export function TaskFilters({ filters, onChange, totalCount }: Props) {

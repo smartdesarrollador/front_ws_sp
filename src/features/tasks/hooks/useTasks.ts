@@ -3,8 +3,7 @@ import { apiClient } from '@/lib/axios'
 import type { Task, TaskFiltersState } from '../types'
 
 interface TasksResponse {
-  results: Task[]
-  count: number
+  tasks: Task[]
 }
 
 export function useTasks(filters: TaskFiltersState) {
@@ -19,6 +18,6 @@ export function useTasks(filters: TaskFiltersState) {
       return data
     },
     staleTime: 30_000,
-    select: (data) => ({ tasks: data.results, total: data.count }),
+    select: (data) => ({ tasks: data.tasks, total: data.tasks.length }),
   })
 }

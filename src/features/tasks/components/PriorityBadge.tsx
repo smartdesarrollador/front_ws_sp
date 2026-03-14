@@ -1,15 +1,15 @@
 import type { TaskPriority } from '../types'
 
 export const PRIORITY_CONFIG: Record<TaskPriority, { label: string; classes: string }> = {
-  alta: {
+  high: {
     label: 'Alta',
     classes: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   },
-  media: {
+  medium: {
     label: 'Media',
     classes: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
   },
-  baja: {
+  low: {
     label: 'Baja',
     classes: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
   },
