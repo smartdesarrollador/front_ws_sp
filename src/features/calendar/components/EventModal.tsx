@@ -101,8 +101,11 @@ export function EventModal({ event, open, onClose, defaultDate }: Props) {
   }, [open, event, defaultDate, reset])
 
   const onSubmit = (data: FormData) => {
+    const { start_date, end_date, ...rest } = data
     const payload = {
-      ...data,
+      ...rest,
+      start_datetime: start_date,
+      end_datetime: end_date,
       color: CATEGORY_COLORS[data.category],
     }
     if (event) {
