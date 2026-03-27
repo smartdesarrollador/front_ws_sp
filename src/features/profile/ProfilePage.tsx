@@ -6,11 +6,13 @@ function ProfilePage() {
   const user = useAuthStore((s) => s.user)
   const navigate = useNavigate()
 
-  const initials = user
-    ? `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase()
-    : '??'
+  const fullName = user
+    ? (`${(user as { first_name?: string }).first_name ?? ''} ${(user as { last_name?: string }).last_name ?? ''}`.trim() || (user as { name?: string }).name || user.email)
+    : '—'
 
-  const fullName = user ? `${user.first_name} ${user.last_name}`.trim() : '—'
+  const initials = fullName !== '—'
+    ? fullName.split(' ').map((w) => w.charAt(0)).slice(0, 2).join('').toUpperCase()
+    : '??'
 
   const formattedDate = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('es-ES', {

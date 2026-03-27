@@ -9,7 +9,7 @@ export const STATUS_CONFIG: Record<TaskStatus, { label: string; classes: string 
     label: 'En progreso',
     classes: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   },
-  in_review: {
+  review: {
     label: 'En revisión',
     classes: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
   },

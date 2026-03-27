@@ -12,7 +12,7 @@ const schema = z.object({
   title: z.string().min(1, 'El título es requerido').max(200, 'Máximo 200 caracteres'),
   description: z.string().optional(),
   priority: z.enum(['high', 'medium', 'low'] as const),
-  status: z.enum(['todo', 'in_progress', 'in_review', 'done'] as const),
+  status: z.enum(['todo', 'in_progress', 'review', 'done'] as const),
   due_date: z.string().optional().nullable(),
 })
 
@@ -180,7 +180,7 @@ export function TaskModal({ task, open, onClose }: Props) {
               >
                 <option value="todo">Por hacer</option>
                 <option value="in_progress">En progreso</option>
-                <option value="in_review">En revisión</option>
+                <option value="review">En revisión</option>
                 <option value="done">Hecho</option>
               </select>
             </div>

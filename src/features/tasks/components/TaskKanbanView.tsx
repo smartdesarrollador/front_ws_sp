@@ -9,7 +9,7 @@ interface Props {
   onDelete: (id: string) => void
 }
 
-const COLUMNS: TaskStatus[] = ['todo', 'in_progress', 'in_review', 'done']
+const COLUMNS: TaskStatus[] = ['todo', 'in_progress', 'review', 'done']
 
 export function TaskKanbanView({ tasks, isLoading, onEdit, onDelete }: Props) {
   return (

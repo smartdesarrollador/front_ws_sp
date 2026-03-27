@@ -10,7 +10,7 @@ const STATUS_OPTIONS: { value: TaskStatus | ''; label: string }[] = [
   { value: '', label: 'Todos los estados' },
   { value: 'todo', label: 'Por hacer' },
   { value: 'in_progress', label: 'En progreso' },
-  { value: 'in_review', label: 'En revisión' },
+  { value: 'review', label: 'En revisión' },
   { value: 'done', label: 'Hecho' },
 ]
 
