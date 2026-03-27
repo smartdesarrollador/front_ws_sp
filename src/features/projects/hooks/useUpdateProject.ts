@@ -10,7 +10,7 @@ export function useUpdateProject() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, ...data }: UpdateProjectInput) => {
-      const response = await apiClient.patch<Project>(`/app/projects/${id}/`, data)
+      const response = await apiClient.patch<Project>(`/app/projects/${id}/update/`, data)
       return response.data
     },
     onSuccess: (_data, { id }) => {

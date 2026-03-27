@@ -7,7 +7,7 @@ export function useTickets() {
     queryKey: ['ws-support-tickets'],
     queryFn: async () => {
       const res = await apiClient.get('/support/tickets/')
-      return Array.isArray(res.data) ? res.data : (res.data.results ?? [])
+      return Array.isArray(res.data) ? res.data : (res.data.results ?? res.data.tickets ?? [])
     },
     staleTime: 30_000,
   })

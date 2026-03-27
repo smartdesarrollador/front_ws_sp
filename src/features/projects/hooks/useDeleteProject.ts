@@ -5,7 +5,7 @@ export function useDeleteProject() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      await apiClient.delete(`/app/projects/${id}/`)
+      await apiClient.delete(`/app/projects/${id}/delete/`)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
