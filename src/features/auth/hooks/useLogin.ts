@@ -9,7 +9,7 @@ export function useLogin() {
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       login(email, password),
     onSuccess: (result) => {
-      if ('ok' in result) navigate('/dashboard')
+      if ('ok' in result) navigate('/')
     },
   })
 }
