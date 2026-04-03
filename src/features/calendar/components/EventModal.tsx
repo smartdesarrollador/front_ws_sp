@@ -104,8 +104,8 @@ export function EventModal({ event, open, onClose, defaultDate }: Props) {
     const { start_date, end_date, ...rest } = data
     const payload = {
       ...rest,
-      start_datetime: start_date,
-      end_datetime: end_date,
+      start_date,
+      end_date,
       color: CATEGORY_COLORS[data.category],
     }
     if (event) {

@@ -36,7 +36,7 @@ describe('TasksPage a11y', () => {
     vi.mocked(useTasks).mockReturnValue({
       data: { tasks: [], total: 0 },
       isLoading: false,
-    } as ReturnType<typeof useTasks>)
+    } as unknown as ReturnType<typeof useTasks>)
     vi.mocked(useDeleteTask).mockReturnValue(mockMutation)
     vi.mocked(useFeatureGate).mockReturnValue({
       hasFeature: () => true,

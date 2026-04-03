@@ -155,7 +155,7 @@ describe('FormsPage', () => {
     vi.mocked(useForms).mockReturnValue({
       data: { forms: [], total: 0 },
       isLoading: false,
-    } as ReturnType<typeof useForms>)
+    } as unknown as ReturnType<typeof useForms>)
     renderPage()
     expect(screen.getByText('Sin formularios')).toBeInTheDocument()
   })
