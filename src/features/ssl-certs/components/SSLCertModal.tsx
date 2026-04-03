@@ -13,7 +13,7 @@ const schema = z.object({
   issuer: z.string().optional(),
   valid_from: z.string().optional(),
   expires_at: z.string().min(1, 'La fecha de vencimiento es requerida'),
-  auto_renew: z.boolean().optional().default(false),
+  auto_renew: z.boolean(),
   notes: z.string().optional(),
 })
 
