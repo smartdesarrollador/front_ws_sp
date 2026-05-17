@@ -7,11 +7,13 @@ import FeatureGate from '@/components/shared/FeatureGate'
 import { SnippetFilters, EMPTY_FILTERS } from './components/SnippetFilters'
 import { SnippetCard } from './components/SnippetCard'
 import { SnippetModal } from './components/SnippetModal'
+import { ShareResourceModal } from '@/features/sharing/components/ShareResourceModal'
 import type { CodeSnippet, SnippetFiltersState } from './types'
 
 export default function SnippetsPage() {
   const [showModal, setShowModal] = useState(false)
   const [snippetToEdit, setSnippetToEdit] = useState<CodeSnippet | null>(null)
+  const [snippetToShare, setSnippetToShare] = useState<CodeSnippet | null>(null)
   const [filters, setFilters] = useState<SnippetFiltersState>(EMPTY_FILTERS)
 
   const { data, isLoading } = useSnippets(filters)
@@ -164,13 +166,22 @@ export default function SnippetsPage() {
               snippet={snippet}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onShare={setSnippetToShare}
             />
           ))}
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modals */}
       {showModal && <SnippetModal snippet={snippetToEdit} onClose={handleCloseModal} />}
+      {snippetToShare && (
+        <ShareResourceModal
+          resourceType="snippet"
+          resourceId={snippetToShare.id}
+          resourceTitle={snippetToShare.title}
+          onClose={() => setSnippetToShare(null)}
+        />
+      )}
     </div>
   )
 }

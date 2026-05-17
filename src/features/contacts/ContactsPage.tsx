@@ -8,11 +8,13 @@ import FeatureGate from '@/components/shared/FeatureGate'
 import { ContactFilters, EMPTY_FILTERS } from './components/ContactFilters'
 import { ContactCard } from './components/ContactCard'
 import { ContactModal } from './components/ContactModal'
+import { ShareResourceModal } from '@/features/sharing/components/ShareResourceModal'
 import type { Contact, ContactFiltersState } from './types'
 
 export default function ContactsPage() {
   const [showModal, setShowModal] = useState(false)
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null)
+  const [contactToShare, setContactToShare] = useState<Contact | null>(null)
   const [filters, setFilters] = useState<ContactFiltersState>(EMPTY_FILTERS)
 
   const { data, isLoading } = useContacts(filters)
@@ -167,13 +169,22 @@ export default function ContactsPage() {
               contact={contact}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onShare={setContactToShare}
             />
           ))}
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modals */}
       {showModal && <ContactModal contact={contactToEdit} onClose={handleCloseModal} />}
+      {contactToShare && (
+        <ShareResourceModal
+          resourceType="contact"
+          resourceId={contactToShare.id}
+          resourceTitle={contactToShare.name}
+          onClose={() => setContactToShare(null)}
+        />
+      )}
     </div>
   )
 }

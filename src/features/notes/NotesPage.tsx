@@ -6,6 +6,7 @@ import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSumm
 import { NoteFilters } from './components/NoteFilters'
 import { NoteCard } from './components/NoteCard'
 import { NoteModal } from './components/NoteModal'
+import { ShareResourceModal } from '@/features/sharing/components/ShareResourceModal'
 import type { Note, NoteFiltersState } from './types'
 
 const EMPTY_FILTERS: NoteFiltersState = { search: '', category: '', pinned_only: false }
@@ -13,6 +14,7 @@ const EMPTY_FILTERS: NoteFiltersState = { search: '', category: '', pinned_only:
 export default function NotesPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingNote, setEditingNote] = useState<Note | null>(null)
+  const [noteToShare, setNoteToShare] = useState<Note | null>(null)
   const [filters, setFilters] = useState<NoteFiltersState>(EMPTY_FILTERS)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
@@ -107,7 +109,7 @@ export default function NotesPage() {
           </div>
           <div className={gridClass}>
             {pinnedNotes.map((note) => (
-              <NoteCard key={note.id} note={note} onEdit={handleEdit} onDelete={handleDelete} />
+              <NoteCard key={note.id} note={note} onEdit={handleEdit} onDelete={handleDelete} onShare={setNoteToShare} />
             ))}
           </div>
         </div>
@@ -170,13 +172,21 @@ export default function NotesPage() {
         ) : (
           <div className={viewMode === 'grid' ? gridClass : listClass}>
             {(filters.pinned_only ? filteredNotes : unpinnedNotes).map((note) => (
-              <NoteCard key={note.id} note={note} onEdit={handleEdit} onDelete={handleDelete} />
+              <NoteCard key={note.id} note={note} onEdit={handleEdit} onDelete={handleDelete} onShare={setNoteToShare} />
             ))}
           </div>
         )}
       </div>
 
       <NoteModal note={editingNote} open={modalOpen} onClose={handleCloseModal} />
+      {noteToShare && (
+        <ShareResourceModal
+          resourceType="note"
+          resourceId={noteToShare.id}
+          resourceTitle={noteToShare.title}
+          onClose={() => setNoteToShare(null)}
+        />
+      )}
     </div>
   )
 }

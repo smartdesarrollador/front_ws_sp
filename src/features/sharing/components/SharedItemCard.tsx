@@ -1,4 +1,5 @@
-import { Folder, CheckSquare, FileText, Bookmark, File } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Folder, CheckSquare, FileText, Bookmark, File, Code2, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { SharedItem } from '../types'
 import { AccessLevelBadge } from './AccessLevelBadge'
@@ -8,6 +9,17 @@ const RESOURCE_ICONS: Record<string, LucideIcon> = {
   task: CheckSquare,
   note: FileText,
   bookmark: Bookmark,
+  snippet: Code2,
+  contact: Users,
+}
+
+const RESOURCE_ROUTES: Record<string, string> = {
+  project: '/projects',
+  task: '/tasks',
+  note: '/notes',
+  bookmark: '/bookmarks',
+  snippet: '/snippets',
+  contact: '/contacts',
 }
 
 function getResourceIcon(resourceType: string): LucideIcon {
@@ -19,6 +31,7 @@ interface Props {
 }
 
 export function SharedItemCard({ item }: Props) {
+  const navigate = useNavigate()
   const ResourceIcon = getResourceIcon(item.resource_type)
 
   const expiresAt = item.expires_at
@@ -64,7 +77,10 @@ export function SharedItemCard({ item }: Props) {
 
       {/* Action */}
       <div className="pt-1 border-t border-gray-100">
-        <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition-colors">
+        <button
+          onClick={() => navigate(RESOURCE_ROUTES[item.resource_type] ?? '/')}
+          className="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+        >
           Abrir →
         </button>
       </div>

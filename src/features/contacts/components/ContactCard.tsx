@@ -1,4 +1,4 @@
-import { Pencil, Trash2, Mail, Phone, Building2 } from 'lucide-react'
+import { Pencil, Trash2, Mail, Phone, Building2, Share2 } from 'lucide-react'
 import type { Contact } from '../types'
 import { GroupBadge } from './GroupBadge'
 
@@ -6,6 +6,7 @@ interface Props {
   contact: Contact
   onEdit: (c: Contact) => void
   onDelete: (id: string) => void
+  onShare: (c: Contact) => void
 }
 
 const PALETTE = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
@@ -24,7 +25,7 @@ function getInitials(name: string): string {
     .toUpperCase()
 }
 
-export function ContactCard({ contact, onEdit, onDelete }: Props) {
+export function ContactCard({ contact, onEdit, onDelete, onShare }: Props) {
   const handleDelete = () => {
     if (window.confirm(`¿Eliminar el contacto "${contact.name}"?`)) {
       onDelete(contact.id)
@@ -53,6 +54,13 @@ export function ContactCard({ contact, onEdit, onDelete }: Props) {
             </h3>
             {/* Action buttons — visible on hover */}
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+              <button
+                onClick={() => onShare(contact)}
+                aria-label="Compartir contacto"
+                className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
               <button
                 onClick={() => onEdit(contact)}
                 aria-label="Editar contacto"

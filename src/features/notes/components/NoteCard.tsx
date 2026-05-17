@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pin, Pencil, Trash2 } from 'lucide-react'
+import { Pin, Pencil, Trash2, Share2 } from 'lucide-react'
 import type { Note } from '../types'
 import { CATEGORY_COLORS } from '../types'
 import { CategoryBadge } from './CategoryBadge'
@@ -8,9 +8,10 @@ interface Props {
   note: Note
   onEdit: (note: Note) => void
   onDelete: (id: string) => void
+  onShare: (note: Note) => void
 }
 
-export function NoteCard({ note, onEdit, onDelete }: Props) {
+export function NoteCard({ note, onEdit, onDelete, onShare }: Props) {
   const [confirming, setConfirming] = useState(false)
 
   const handleDelete = () => {
@@ -73,6 +74,13 @@ export function NoteCard({ note, onEdit, onDelete }: Props) {
           </span>
           {/* Action buttons — visible on hover */}
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onShare(note)}
+              aria-label="Compartir nota"
+              className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
             <button
               onClick={() => onEdit(note)}
               aria-label="Editar nota"

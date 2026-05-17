@@ -4,14 +4,16 @@ import { useSharedWithMe } from './hooks/useSharedWithMe'
 import { SharedItemCard } from './components/SharedItemCard'
 import type { ShareAccessLevel } from './types'
 
-type ResourceTypeFilter = 'all' | 'project' | 'task' | 'note' | 'bookmark'
+type ResourceTypeFilter = 'all' | 'project' | 'task' | 'note' | 'bookmark' | 'snippet' | 'contact'
 type AccessLevelFilter = 'all' | ShareAccessLevel
 
 const RESOURCE_TYPE_OPTIONS: { value: ResourceTypeFilter; label: string }[] = [
   { value: 'all', label: 'Todos' },
   { value: 'project', label: 'Proyectos' },
-  { value: 'task', label: 'Tareas' },
+  { value: 'snippet', label: 'Snippets' },
   { value: 'note', label: 'Notas' },
+  { value: 'contact', label: 'Contactos' },
+  { value: 'task', label: 'Tareas' },
   { value: 'bookmark', label: 'Bookmarks' },
 ]
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Star, Pencil, Trash2, Copy, Check } from 'lucide-react'
+import { Star, Pencil, Trash2, Copy, Check, Share2 } from 'lucide-react'
 import type { CodeSnippet } from '../types'
 import LanguageBadge from './LanguageBadge'
 
@@ -7,9 +7,10 @@ interface Props {
   snippet: CodeSnippet
   onEdit: (s: CodeSnippet) => void
   onDelete: (id: string) => void
+  onShare: (s: CodeSnippet) => void
 }
 
-export function SnippetCard({ snippet, onEdit, onDelete }: Props) {
+export function SnippetCard({ snippet, onEdit, onDelete, onShare }: Props) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -50,6 +51,13 @@ export function SnippetCard({ snippet, onEdit, onDelete }: Props) {
             ) : (
               <Copy className="w-3.5 h-3.5" />
             )}
+          </button>
+          <button
+            onClick={() => onShare(snippet)}
+            aria-label="Compartir snippet"
+            className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+          >
+            <Share2 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => onEdit(snippet)}
