@@ -9,23 +9,23 @@ services:
         VITE_API_URL: ${VITE_API_URL}
         VITE_APP_NAME: ${VITE_APP_NAME:-Workspace}
         VITE_APP_VERSION: ${VITE_APP_VERSION:-1.0.0}
-        VITE_HUB_URL: ${VITE_HUB_URL:-https://hub.smartdigitaltec.com}
+        VITE_HUB_URL: ${VITE_HUB_URL:-https://hub.siderdigital.com}
     restart: unless-stopped
     networks:
       - dokploy-network
     labels:
-      - "traefik.enable=true"
+      - 'traefik.enable=true'
       # HTTPS router
-      - "traefik.http.routers.rbac-workspace.rule=Host(`${WORKSPACE_DOMAIN}`)"
-      - "traefik.http.routers.rbac-workspace.entrypoints=websecure"
-      - "traefik.http.routers.rbac-workspace.service=rbac-workspace"
+      - 'traefik.http.routers.rbac-workspace.rule=Host(`${WORKSPACE_DOMAIN}`)'
+      - 'traefik.http.routers.rbac-workspace.entrypoints=websecure'
+      - 'traefik.http.routers.rbac-workspace.service=rbac-workspace'
       # HTTP → HTTPS redirect
-      - "traefik.http.routers.rbac-workspace-http.rule=Host(`${WORKSPACE_DOMAIN}`)"
-      - "traefik.http.routers.rbac-workspace-http.entrypoints=web"
-      - "traefik.http.routers.rbac-workspace-http.middlewares=redirect-to-https@file"
-      - "traefik.http.routers.rbac-workspace-http.service=rbac-workspace"
+      - 'traefik.http.routers.rbac-workspace-http.rule=Host(`${WORKSPACE_DOMAIN}`)'
+      - 'traefik.http.routers.rbac-workspace-http.entrypoints=web'
+      - 'traefik.http.routers.rbac-workspace-http.middlewares=redirect-to-https@file'
+      - 'traefik.http.routers.rbac-workspace-http.service=rbac-workspace'
       # Backend service
-      - "traefik.http.services.rbac-workspace.loadbalancer.server.port=80"
+      - 'traefik.http.services.rbac-workspace.loadbalancer.server.port=80'
 
 networks:
   dokploy-network:
