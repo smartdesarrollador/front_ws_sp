@@ -19,6 +19,8 @@ export interface Tenant {
   subdomain: string
   primary_color?: string
   plan?: string
+  logo_url?: string | null
+  favicon_url?: string | null
 }
 
 export type LoginResult = { ok: true } | { mfaRequired: true; mfaToken: string }

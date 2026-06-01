@@ -43,10 +43,18 @@ function Navbar() {
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">
-                {(tenant?.name ?? 'W').charAt(0)}
-              </span>
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center overflow-hidden">
+              {tenant?.logo_url ? (
+                <img
+                  src={tenant.logo_url}
+                  alt={tenant.name}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="text-white font-bold text-sm">
+                  {(tenant?.name ?? 'W').charAt(0)}
+                </span>
+              )}
             </div>
             <div>
               <h1 className="text-sm font-semibold text-gray-900 dark:text-white">
