@@ -6,7 +6,7 @@ import { X } from 'lucide-react'
 import { useCreateEvent } from '../hooks/useCreateEvent'
 import { useUpdateEvent } from '../hooks/useUpdateEvent'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
-import type { CalendarEvent, EventCategory } from '../types'
+import type { CalendarEvent, CreateEventRequest, EventCategory } from '../types'
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '../types'
 
 const CATEGORIES: EventCategory[] = ['meeting', 'standup', 'client', 'review', 'personal']
@@ -101,11 +101,13 @@ export function EventModal({ event, open, onClose, defaultDate }: Props) {
   }, [open, event, defaultDate, reset])
 
   const onSubmit = (data: FormData) => {
-    const { start_date, end_date, ...rest } = data
-    const payload = {
-      ...rest,
-      start_date,
-      end_date,
+    const payload: CreateEventRequest = {
+      title: data.title,
+      description: data.description ?? '',
+      start_datetime: data.start_date,
+      end_datetime: data.end_date,
+      is_all_day: data.all_day ?? false,
+      location: data.location ?? '',
       color: CATEGORY_COLORS[data.category],
     }
     if (event) {

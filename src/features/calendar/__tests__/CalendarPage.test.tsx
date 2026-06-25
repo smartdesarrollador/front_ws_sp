@@ -16,32 +16,39 @@ vi.mock('../hooks/useCreateEvent')
 vi.mock('../hooks/useUpdateEvent')
 vi.mock('@/features/dashboard/hooks/useDashboardSummary')
 
+// Fechas derivadas de "hoy" para que los eventos caigan siempre en el mes
+// mostrado por defecto (la vista mes arranca en el mes actual). Evita que el
+// test se rompa con el paso del tiempo (fixtures antes fijos en marzo 2026).
+const pad = (n: number) => String(n).padStart(2, '0')
+const today = new Date()
+const todayYmd = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`
+
 const mockEvents: CalendarEvent[] = [
   {
     id: 'e1',
     title: 'Sprint Planning',
     description: 'Planning session',
-    start_date: '2026-03-10T09:00',
-    end_date: '2026-03-10T10:00',
+    start_date: `${todayYmd}T09:00`,
+    end_date: `${todayYmd}T10:00`,
     all_day: false,
     category: 'meeting',
     color: '#3b82f6',
     location: 'Sala A',
-    created_at: '2026-03-01T10:00:00Z',
-    updated_at: '2026-03-10T10:00:00Z',
+    created_at: `${todayYmd}T08:00:00Z`,
+    updated_at: `${todayYmd}T10:00:00Z`,
   },
   {
     id: 'e2',
     title: 'Daily Standup',
     description: null,
-    start_date: '2026-03-10T10:00',
-    end_date: '2026-03-10T10:15',
+    start_date: `${todayYmd}T10:00`,
+    end_date: `${todayYmd}T10:15`,
     all_day: false,
     category: 'standup',
     color: '#8b5cf6',
     location: null,
-    created_at: '2026-03-02T10:00:00Z',
-    updated_at: '2026-03-10T10:00:00Z',
+    created_at: `${todayYmd}T08:00:00Z`,
+    updated_at: `${todayYmd}T10:00:00Z`,
   },
 ]
 

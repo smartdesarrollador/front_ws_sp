@@ -17,6 +17,13 @@ export const CATEGORY_LABELS: Record<EventCategory, string> = {
   personal: 'Personal',
 }
 
+// El backend solo persiste `color`; la categoría es un concepto del frontend.
+// Mapa inverso para reconstruir la categoría al editar un evento existente.
+export const COLOR_TO_CATEGORY: Record<string, EventCategory> = Object.fromEntries(
+  Object.entries(CATEGORY_COLORS).map(([cat, color]) => [color, cat]),
+) as Record<string, EventCategory>
+
+// Forma interna del frontend (usa `all_day` y `category`).
 export interface CalendarEvent {
   id: string
   title: string
@@ -31,13 +38,27 @@ export interface CalendarEvent {
   updated_at: string
 }
 
+// Forma cruda que devuelve el backend (usa `is_all_day`, sin `category`).
+export interface CalendarEventApi {
+  id: string
+  title: string
+  description: string | null
+  start_date: string
+  end_date: string
+  is_all_day: boolean
+  color: string
+  location: string | null
+  created_at: string
+  updated_at: string
+}
+
+// Contrato de escritura del backend (CalendarEventCreateUpdateSerializer).
 export interface CreateEventRequest {
   title: string
   description?: string
-  start_date: string
-  end_date: string
-  all_day?: boolean
-  category: EventCategory
+  start_datetime: string
+  end_datetime: string
+  is_all_day?: boolean
   color?: string
   location?: string
 }
