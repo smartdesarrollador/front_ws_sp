@@ -35,6 +35,11 @@ export const router = createBrowserRouter([
                   import('@/pages/NotesPage').then((m) => ({ Component: m.default })),
               },
               {
+                path: 'chat',
+                lazy: () =>
+                  import('@/pages/ChatPage').then((m) => ({ Component: m.default })),
+              },
+              {
                 path: 'contacts',
                 lazy: () =>
                   import('@/pages/ContactsPage').then((m) => ({ Component: m.default })),
