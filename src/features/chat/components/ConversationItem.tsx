@@ -24,6 +24,7 @@ export function ConversationItem({ conversation, isActive, onSelect }: Conversat
         name={display_avatar.name}
         color={display_avatar.color}
         isGroup={display_avatar.type === 'group'}
+        isSelf={display_avatar.type === 'self'}
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">

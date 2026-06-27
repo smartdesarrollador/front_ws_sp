@@ -10,6 +10,7 @@ import { useMarkRead } from '../hooks/useMarkRead'
 import { useConvertMessage } from '../hooks/useConvertMessage'
 import { useConversationDetail } from '../hooks/useConversationDetail'
 import { useLeaveConversation } from '../hooks/useLeaveConversation'
+import { useSelfConversation } from '../hooks/useSelfConversation'
 import { useChatUsers } from '../hooks/useChatUsers'
 import { useConnections } from '../hooks/useConnections'
 import { useChatSocket } from '../hooks/useChatSocket'
@@ -25,6 +26,7 @@ vi.mock('../hooks/useMarkRead')
 vi.mock('../hooks/useConvertMessage')
 vi.mock('../hooks/useConversationDetail')
 vi.mock('../hooks/useLeaveConversation')
+vi.mock('../hooks/useSelfConversation')
 vi.mock('../hooks/useChatUsers')
 
 const mockConversations: Conversation[] = [
@@ -63,6 +65,7 @@ const createMutate = vi.fn()
 const markReadMutate = vi.fn()
 const convertMutate = vi.fn()
 const leaveMutate = vi.fn()
+const selfMutate = vi.fn()
 
 function setup() {
   const qc = new QueryClient({
@@ -91,6 +94,7 @@ beforeEach(() => {
   vi.mocked(useConvertMessage).mockReturnValue({ mutate: convertMutate } as unknown as ReturnType<typeof useConvertMessage>)
   vi.mocked(useConversationDetail).mockReturnValue({ data: undefined } as unknown as ReturnType<typeof useConversationDetail>)
   vi.mocked(useLeaveConversation).mockReturnValue({ mutate: leaveMutate } as unknown as ReturnType<typeof useLeaveConversation>)
+  vi.mocked(useSelfConversation).mockReturnValue({ mutate: selfMutate, isPending: false } as unknown as ReturnType<typeof useSelfConversation>)
   vi.mocked(useChatUsers).mockReturnValue({ data: [], isLoading: false } as unknown as ReturnType<typeof useChatUsers>)
   vi.mocked(useConnections).mockReturnValue({
     data: { accepted: [], pending_incoming: [], pending_outgoing: [] },
@@ -145,6 +149,14 @@ describe('ChatPage', () => {
     setup()
     fireEvent.click(screen.getByLabelText('Nuevo chat'))
     expect(screen.getByText('Nuevo chat')).toBeInTheDocument()
+  })
+
+  it('shows the pinned "Mensajes guardados" entry and opens it on click', () => {
+    setup()
+    const pinned = screen.getByLabelText('Mensajes guardados')
+    expect(pinned).toBeInTheDocument()
+    fireEvent.click(pinned)
+    expect(selfMutate).toHaveBeenCalled()
   })
 
   it('converts a message via the bubble menu', () => {

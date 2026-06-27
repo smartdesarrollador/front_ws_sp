@@ -1,4 +1,4 @@
-export type ConversationType = 'direct' | 'group'
+export type ConversationType = 'direct' | 'group' | 'self'
 export type MemberRole = 'owner' | 'admin' | 'member'
 export type ConvertTarget = 'note' | 'contact' | 'snippet'
 
@@ -17,7 +17,7 @@ export interface ConversationMember {
 }
 
 export interface DisplayAvatar {
-  type: 'user' | 'group'
+  type: 'user' | 'group' | 'self'
   name: string
   avatar_url?: string
   color: string

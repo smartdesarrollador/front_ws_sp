@@ -9,6 +9,7 @@ import { useMarkRead } from './hooks/useMarkRead'
 import { useConvertMessage } from './hooks/useConvertMessage'
 import { useConversationDetail } from './hooks/useConversationDetail'
 import { useLeaveConversation } from './hooks/useLeaveConversation'
+import { useSelfConversation } from './hooks/useSelfConversation'
 import { useChatSocket } from './hooks/useChatSocket'
 import { ConversationList } from './components/ConversationList'
 import { MessageThread } from './components/MessageThread'
@@ -45,6 +46,7 @@ export default function ChatPage() {
   const markRead = useMarkRead()
   const convertMessage = useConvertMessage()
   const leaveConversation = useLeaveConversation()
+  const selfConversation = useSelfConversation()
 
   const activeConversation = conversations.find((c) => c.id === activeId) ?? null
   const activeIsOnline = Boolean(
@@ -77,6 +79,16 @@ export default function ChatPage() {
     createConversation.mutate(payload, {
       onSuccess: (conversation) => {
         setShowNewChat(false)
+        setActiveId(conversation.id)
+      },
+    })
+  }
+
+  const handleOpenSelfChat = () => {
+    selfConversation.mutate(undefined, {
+      onSuccess: (conversation) => {
+        setReplyTo(null)
+        setShowInfo(false)
         setActiveId(conversation.id)
       },
     })
@@ -132,6 +144,7 @@ export default function ChatPage() {
         onSelect={handleSelect}
         onNewChat={() => setShowNewChat(true)}
         onOpenConnections={() => setShowConnections(true)}
+        onOpenSelfChat={handleOpenSelfChat}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -143,6 +156,7 @@ export default function ChatPage() {
                   name={activeConversation.display_avatar.name}
                   color={activeConversation.avatar_color}
                   isGroup={activeConversation.type === 'group'}
+                  isSelf={activeConversation.type === 'self'}
                   size="sm"
                 />
                 <div className="min-w-0">

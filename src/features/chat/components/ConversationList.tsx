@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Search, MessageSquare, Users2 } from 'lucide-react'
+import { Bookmark, Plus, Search, MessageSquare, Users2 } from 'lucide-react'
 import { ConversationItem } from './ConversationItem'
 import type { Conversation } from '../types'
 
@@ -10,6 +10,7 @@ interface ConversationListProps {
   onSelect: (id: string) => void
   onNewChat: () => void
   onOpenConnections: () => void
+  onOpenSelfChat: () => void
 }
 
 export function ConversationList({
@@ -19,11 +20,18 @@ export function ConversationList({
   onSelect,
   onNewChat,
   onOpenConnections,
+  onOpenSelfChat,
 }: ConversationListProps) {
   const [search, setSearch] = useState('')
 
-  const filtered = conversations.filter((c) =>
-    c.display_name.toLowerCase().includes(search.toLowerCase()),
+  const selfConversation = conversations.find((c) => c.type === 'self') ?? null
+  const selfActive = Boolean(selfConversation && selfConversation.id === activeId)
+
+  // The self-chat is rendered as a fixed pinned entry, so exclude it here.
+  const filtered = conversations.filter(
+    (c) =>
+      c.type !== 'self' &&
+      c.display_name.toLowerCase().includes(search.toLowerCase()),
   )
 
   return (
@@ -64,6 +72,32 @@ export function ConversationList({
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+        <button
+          type="button"
+          onClick={onOpenSelfChat}
+          aria-label="Mensajes guardados"
+          className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors ${
+            selfActive
+              ? 'bg-primary-50 dark:bg-primary-900/30'
+              : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+          }`}
+        >
+          <div
+            className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white flex-shrink-0"
+            aria-hidden="true"
+          >
+            <Bookmark className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
+              Mensajes guardados
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              Guarda mensajes para ti
+            </p>
+          </div>
+        </button>
+
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3 px-3 py-3 animate-pulse">
