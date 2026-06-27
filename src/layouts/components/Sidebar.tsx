@@ -11,6 +11,7 @@ import {
   Terminal,
   Key,
   Shield,
+  Vault,
   Code2,
   ClipboardList,
   Share2,
@@ -61,6 +62,7 @@ const MENU_GROUPS: MenuGroup[] = [
     items: [
       { label: 'Proyectos', to: '/projects', icon: Folder, permission: null, feature: null },
       { label: 'Variables de Entorno', to: '/env-vars', icon: Terminal, permission: null, feature: 'env_vars' },
+      { label: 'Bóveda', to: '/vault', icon: Vault, permission: null, feature: 'vault' },
       { label: 'SSH Keys', to: '/ssh-keys', icon: Key, permission: null, feature: 'ssh_keys' },
       { label: 'SSL Certs', to: '/ssl-certs', icon: Shield, permission: null, feature: 'ssl_certs' },
       { label: 'Snippets', to: '/snippets', icon: Code2, permission: null, feature: null },

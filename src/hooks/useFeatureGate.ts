@@ -9,6 +9,7 @@ interface FeaturesResponse {
     projects: number | null
     storage_gb: number | null
     api_calls_per_month: number | null
+    vault_items: number | null
   }
 }
 

@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 import { useAuthStore } from '@/store/authStore'
+import { useVaultStore } from '@/store/vaultStore'
 
 const BASE_URL = `${import.meta.env.VITE_API_URL ?? ''}/api/v1`
 
@@ -40,6 +41,13 @@ apiClient.interceptors.request.use((config) => {
   }
   if (state.tenant?.subdomain) {
     config.headers['X-Tenant-Slug'] = state.tenant.subdomain
+  }
+  // Attach the vault unlock token only for vault endpoints.
+  if (config.url?.includes('/vault/')) {
+    const vault = useVaultStore.getState()
+    if (vault.isUnlocked() && vault.unlockToken) {
+      config.headers['X-Vault-Token'] = vault.unlockToken
+    }
   }
   return config
 })

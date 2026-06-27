@@ -65,6 +65,11 @@ export const router = createBrowserRouter([
                   import('@/pages/EnvVarsPage').then((m) => ({ Component: m.default })),
               },
               {
+                path: 'vault',
+                lazy: () =>
+                  import('@/pages/VaultPage').then((m) => ({ Component: m.default })),
+              },
+              {
                 path: 'ssh-keys',
                 lazy: () =>
                   import('@/pages/SSHKeysPage').then((m) => ({ Component: m.default })),

@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useChangePassword } from '../hooks/useChangePassword'
 import { useMFASetup } from '../hooks/useMFASetup'
 import { useMFADisable } from '../hooks/useMFADisable'
+import { VaultMasterPasswordSection } from '@/features/vault/components/VaultMasterPasswordSection'
 import type { MFASetupResponse } from '../types'
 
 const passwordSchema = z
@@ -191,6 +192,9 @@ function SecurityTab() {
           </div>
         )}
       </div>
+
+      {/* Vault master password */}
+      <VaultMasterPasswordSection />
     </div>
   )
 }
