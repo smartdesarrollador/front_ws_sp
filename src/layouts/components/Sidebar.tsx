@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Home,
+  Search,
   CheckSquare,
   Calendar,
   FileText,
@@ -44,6 +45,7 @@ const MENU_GROUPS: MenuGroup[] = [
     group: 'GENERAL',
     items: [
       { label: 'Dashboard', to: '/', icon: Home, permission: null, feature: null },
+      { label: 'Buscar', to: '/search', icon: Search, permission: null, feature: null },
     ],
   },
   {

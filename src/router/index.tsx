@@ -20,6 +20,11 @@ export const router = createBrowserRouter([
                   import('@/pages/DashboardPage').then((m) => ({ Component: m.default })),
               },
               {
+                path: 'search',
+                lazy: () =>
+                  import('@/pages/SearchPage').then((m) => ({ Component: m.default })),
+              },
+              {
                 path: 'tasks',
                 lazy: () =>
                   import('@/pages/TasksPage').then((m) => ({ Component: m.default })),

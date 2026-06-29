@@ -14,6 +14,14 @@ interface TypingState {
   [conversationId: string]: { userName: string; at: number }
 }
 
+// After this many consecutive failed connections we stop retrying and rely on
+// the polling fallback. This caps the browser's native "WebSocket … failed"
+// console spam in environments where the WS endpoint isn't available (e.g. a
+// backend served over WSGI without ASGI/Daphne). The browser logs one error
+// per attempt and that line can't be suppressed from JS — bounding the retries
+// is what keeps it from repeating forever.
+const MAX_RECONNECT_ATTEMPTS = 4
+
 /**
  * Real-time chat over WebSocket with graceful degradation: when the socket is
  * down the existing polling (refetchInterval) keeps the UI fresh.
@@ -84,6 +92,9 @@ export function useChatSocket() {
         setConnected(false)
         socketRef.current = null
         if (closedByUs.current) return
+        // Give up after a few failures: the polling fallback keeps the UI fresh
+        // and we avoid spamming the console with native WS errors forever.
+        if (attemptsRef.current >= MAX_RECONNECT_ATTEMPTS) return
         // Exponential backoff (1s → max 15s); polling covers the gap meanwhile.
         attemptsRef.current += 1
         const delay = Math.min(1000 * 2 ** attemptsRef.current, 15_000)
