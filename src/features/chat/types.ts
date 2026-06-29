@@ -44,6 +44,20 @@ export interface Conversation {
   updated_at: string
 }
 
+export interface ChatMessageSearchResult {
+  message_id: string
+  conversation_id: string
+  conversation_name: string
+  snippet: string
+  sender_name: string
+  created_at: string
+}
+
+export interface ChatSearchResponse {
+  query: string
+  messages: ChatMessageSearchResult[]
+}
+
 export interface ConversationDetail extends Conversation {
   members: ConversationMember[]
   created_at: string
