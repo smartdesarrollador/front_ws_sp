@@ -1,4 +1,4 @@
-import { CheckSquare, CheckCheck, FolderOpen, HardDrive } from 'lucide-react'
+import { CheckSquare, CheckCheck, FolderOpen, AlertTriangle } from 'lucide-react'
 import type { SummaryData } from '../types'
 
 interface Props {
@@ -50,6 +50,8 @@ export function KpiCards({ summary, isLoading }: Props) {
 
   if (!summary) return null
 
+  const overdue = summary.overdue_tasks ?? 0
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <KpiCard
@@ -74,11 +76,10 @@ export function KpiCards({ summary, isLoading }: Props) {
         growth={summary.projects_growth}
       />
       <KpiCard
-        title="Almacenamiento"
-        value={`${summary.storage_used_gb} GB`}
-        icon={<HardDrive className="h-5 w-5 text-white" />}
-        colorClass="bg-orange-500"
-        growth={summary.storage_growth}
+        title="Tareas Vencidas"
+        value={String(overdue)}
+        icon={<AlertTriangle className="h-5 w-5 text-white" />}
+        colorClass={overdue > 0 ? 'bg-red-500' : 'bg-gray-400'}
       />
     </div>
   )
