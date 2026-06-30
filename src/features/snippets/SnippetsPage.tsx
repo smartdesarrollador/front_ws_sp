@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Plus, Code2, Download } from 'lucide-react'
+import { Plus, Code2 } from 'lucide-react'
 import { useSnippets } from './hooks/useSnippets'
 import { useDeleteSnippet } from './hooks/useDeleteSnippet'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
-import FeatureGate from '@/components/shared/FeatureGate'
+import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
+import { toJSON, toCodeZip, downloadBlob } from '@/lib/export'
 import { SnippetFilters, EMPTY_FILTERS } from './components/SnippetFilters'
 import { SnippetCard } from './components/SnippetCard'
 import { SnippetModal } from './components/SnippetModal'
@@ -57,6 +58,25 @@ export default function SnippetsPage() {
     setSnippetToEdit(null)
   }
 
+  const exportFormats: ExportFormat[] = [
+    {
+      id: 'zip',
+      label: 'Archivos de código (.zip)',
+      run: async () => {
+        const blob = await toCodeZip(
+          filteredSnippets.map((s) => ({ title: s.title, code: s.code, language: s.language })),
+        )
+        downloadBlob(blob, 'snippets.zip')
+      },
+    },
+    {
+      id: 'json',
+      label: 'JSON',
+      run: () =>
+        downloadBlob(new Blob([toJSON(filteredSnippets)], { type: 'application/json' }), 'snippets.json'),
+    },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -68,48 +88,11 @@ export default function SnippetsPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {/* Export with FeatureGate */}
-          <FeatureGate
+          <ExportMenu
             feature="snippets_export"
-            fallback={
-              <button
-                disabled
-                title="Actualiza tu plan para exportar snippets"
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-not-allowed"
-              >
-                <Download className="w-4 h-4" />
-                Exportar
-              </button>
-            }
-          >
-            <button
-              onClick={() => {
-                const csvContent = [
-                  ['Título', 'Lenguaje', 'Descripción', 'Tags', 'Favorito'].join(','),
-                  ...filteredSnippets.map((s) =>
-                    [
-                      s.title,
-                      s.language,
-                      s.description ?? '',
-                      s.tags.join(';'),
-                      s.is_favorite ? 'Sí' : 'No',
-                    ].join(','),
-                  ),
-                ].join('\n')
-                const blob = new Blob([csvContent], { type: 'text/csv' })
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = 'snippets.csv'
-                a.click()
-                URL.revokeObjectURL(url)
-              }}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Exportar
-            </button>
-          </FeatureGate>
+            formats={exportFormats}
+            disabledHint="Actualiza tu plan para exportar snippets"
+          />
 
           <button
             onClick={() => {

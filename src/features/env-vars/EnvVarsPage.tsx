@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Terminal, Download } from 'lucide-react'
+import { Plus, Terminal } from 'lucide-react'
 import { useEnvVars } from './hooks/useEnvVars'
 import { useDeleteEnvVar } from './hooks/useDeleteEnvVar'
 import { useFeatureGate } from '@/hooks/useFeatureGate'
@@ -63,61 +63,18 @@ export default function EnvVarsPage() {
               {total}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Export with FeatureGate */}
-            <FeatureGate
-              feature="env_vars_export"
-              fallback={
-                <button
-                  disabled
-                  title="Actualiza tu plan para exportar variables de entorno"
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-not-allowed"
-                >
-                  <Download className="w-4 h-4" />
-                  Exportar
-                </button>
-              }
-            >
-              <button
-                onClick={() => {
-                  const csvContent = [
-                    ['Key', 'Value', 'Environment', 'Description', 'Encrypted'].join(','),
-                    ...envVars.map((v) =>
-                      [
-                        v.key,
-                        v.value,
-                        v.environment,
-                        v.description ?? '',
-                        v.is_encrypted ? 'Sí' : 'No',
-                      ].join(','),
-                    ),
-                  ].join('\n')
-                  const blob = new Blob([csvContent], { type: 'text/csv' })
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = 'env-vars.csv'
-                  a.click()
-                  URL.revokeObjectURL(url)
-                }}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                Exportar
-              </button>
-            </FeatureGate>
-
-            <button
-              onClick={() => {
-                setEnvVarToEdit(null)
-                setShowModal(true)
-              }}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Nueva Variable
-            </button>
-          </div>
+          {/* Nota: las variables de entorno son secretos (valores cifrados) y
+              por seguridad NO se exportan. Ver backup completo en Ajustes. */}
+          <button
+            onClick={() => {
+              setEnvVarToEdit(null)
+              setShowModal(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Variable
+          </button>
         </div>
 
         {/* Plan limit banner */}

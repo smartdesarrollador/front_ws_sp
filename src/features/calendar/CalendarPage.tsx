@@ -2,6 +2,12 @@ import { useState } from 'react'
 import { useCalendarEvents } from './hooks/useCalendarEvents'
 import { useDeleteEvent } from './hooks/useDeleteEvent'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
+import { useImportEvents } from './hooks/useImportEvents'
+import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
+import ImportButton from '@/components/shared/ImportButton'
+import ImportModal from '@/components/shared/ImportModal'
+import { toICS, downloadBlob } from '@/lib/export'
+import { parseCalendarFile } from '@/lib/import'
 import { CalendarHeader } from './components/CalendarHeader'
 import { MonthView } from './components/MonthView'
 import { WeekView } from './components/WeekView'
@@ -27,6 +33,7 @@ export default function CalendarPage() {
   const monthStr = toMonthStr(currentDate)
   const { data, isLoading } = useCalendarEvents(monthStr)
   const deleteEvent = useDeleteEvent()
+  const importEvents = useImportEvents()
   const { data: summaryData } = useDashboardSummary()
 
   const events = data?.events ?? []
@@ -101,14 +108,68 @@ export default function CalendarPage() {
     setDefaultDate(undefined)
   }
 
+  const exportFormats: ExportFormat[] = [
+    {
+      id: 'ics',
+      label: 'iCalendar (.ics)',
+      run: () =>
+        downloadBlob(
+          new Blob(
+            [
+              toICS(
+                events.map((e) => ({
+                  id: e.id,
+                  title: e.title,
+                  description: e.description,
+                  start_date: e.start_date,
+                  end_date: e.end_date,
+                  all_day: e.all_day,
+                  location: e.location,
+                })),
+              ),
+            ],
+            { type: 'text/calendar;charset=utf-8' },
+          ),
+          'calendario.ics',
+        ),
+    },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Calendario</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Gestiona tus eventos y reuniones
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Calendario</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            Gestiona tus eventos y reuniones
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <ImportButton
+            feature="calendar_import"
+            disabledHint="Actualiza tu plan para importar el calendario"
+            renderModal={(close) => (
+              <ImportModal
+                title="Importar eventos"
+                accept=".ics"
+                formatsHint="iCalendar (.ics)"
+                parseFile={parseCalendarFile}
+                columns={[
+                  { label: 'Título', value: (e) => e.title ?? '' },
+                  { label: 'Inicio', value: (e) => e.start_datetime ?? '' },
+                ]}
+                onImport={(items) => importEvents.mutateAsync(items)}
+                onClose={close}
+              />
+            )}
+          />
+          <ExportMenu
+            feature="calendar_export"
+            formats={exportFormats}
+            disabledHint="Actualiza tu plan para exportar el calendario"
+          />
+        </div>
       </div>
 
       {/* Plan limit banner */}

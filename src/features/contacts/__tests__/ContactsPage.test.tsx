@@ -209,7 +209,7 @@ describe('ContactsPage', () => {
     expect(screen.getByText('No hay contactos')).toBeInTheDocument()
   })
 
-  it('CSV Export muestra UpgradePrompt cuando no tiene feature contacts_export', () => {
+  it('Export muestra fallback disabled cuando no tiene feature contact_export', () => {
     vi.mocked(useFeatureGate).mockReturnValue({
       hasFeature: () => false,
       getLimit: () => null,
@@ -218,7 +218,7 @@ describe('ContactsPage', () => {
     })
 
     renderContactsPage()
-    const exportBtn = screen.getByRole('button', { name: /Exportar CSV/i })
+    const exportBtn = screen.getByRole('button', { name: /Exportar/i })
     expect(exportBtn).toBeDisabled()
   })
 })

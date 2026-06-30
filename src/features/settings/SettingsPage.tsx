@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { User, Shield, Monitor, Bell } from 'lucide-react'
+import { User, Shield, Monitor, Bell, Database } from 'lucide-react'
 import ProfileTab from './components/ProfileTab'
 import SecurityTab from './components/SecurityTab'
 import InterfaceTab from './components/InterfaceTab'
 import NotificationsTab from './components/NotificationsTab'
+import DataTab from './components/DataTab'
 
-type TabId = 'profile' | 'security' | 'interface' | 'notifications'
+type TabId = 'profile' | 'security' | 'interface' | 'notifications' | 'data'
 
 interface TabItem {
   id: TabId
@@ -18,6 +19,7 @@ const TABS: TabItem[] = [
   { id: 'security', label: 'Seguridad', icon: Shield },
   { id: 'interface', label: 'Interfaz', icon: Monitor },
   { id: 'notifications', label: 'Notificaciones', icon: Bell },
+  { id: 'data', label: 'Datos', icon: Database },
 ]
 
 function SettingsPage() {
@@ -56,6 +58,7 @@ function SettingsPage() {
           {activeTab === 'security' && <SecurityTab />}
           {activeTab === 'interface' && <InterfaceTab />}
           {activeTab === 'notifications' && <NotificationsTab />}
+          {activeTab === 'data' && <DataTab />}
         </div>
       </div>
     </div>

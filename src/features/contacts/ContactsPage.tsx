@@ -1,10 +1,15 @@
 import { useState } from 'react'
-import { Plus, Users, Download } from 'lucide-react'
+import { Plus, Users } from 'lucide-react'
 import { useContacts } from './hooks/useContacts'
 import { useContactGroups } from './hooks/useContactGroups'
 import { useDeleteContact } from './hooks/useDeleteContact'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
-import FeatureGate from '@/components/shared/FeatureGate'
+import { useImportContacts } from './hooks/useImportContacts'
+import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
+import ImportButton from '@/components/shared/ImportButton'
+import ImportModal from '@/components/shared/ImportModal'
+import { toCSV, toVCard, downloadBlob } from '@/lib/export'
+import { parseContacts } from '@/lib/import'
 import { ContactFilters, EMPTY_FILTERS } from './components/ContactFilters'
 import { ContactCard } from './components/ContactCard'
 import { ContactModal } from './components/ContactModal'
@@ -20,6 +25,7 @@ export default function ContactsPage() {
   const { data, isLoading } = useContacts(filters)
   const { data: groups = [] } = useContactGroups()
   const deleteContact = useDeleteContact()
+  const importContacts = useImportContacts()
   const { data: summaryData } = useDashboardSummary()
 
   const allContacts = data?.contacts ?? []
@@ -58,6 +64,53 @@ export default function ContactsPage() {
     setContactToEdit(null)
   }
 
+  const exportFormats: ExportFormat[] = [
+    {
+      id: 'vcard',
+      label: 'vCard (.vcf)',
+      run: () =>
+        downloadBlob(
+          new Blob(
+            [
+              toVCard(
+                filteredContacts.map((c) => ({
+                  name: c.name,
+                  email: c.email,
+                  phone: c.phone,
+                  company: c.company,
+                  job_title: c.job_title,
+                  notes: c.notes,
+                })),
+              ),
+            ],
+            { type: 'text/vcard;charset=utf-8' },
+          ),
+          'contactos.vcf',
+        ),
+    },
+    {
+      id: 'csv',
+      label: 'CSV',
+      run: () =>
+        downloadBlob(
+          new Blob(
+            [
+              toCSV(filteredContacts, [
+                { label: 'Nombre', value: (c) => c.name },
+                { label: 'Email', value: (c) => c.email },
+                { label: 'Teléfono', value: (c) => c.phone ?? '' },
+                { label: 'Empresa', value: (c) => c.company ?? '' },
+                { label: 'Cargo', value: (c) => c.job_title ?? '' },
+                { label: 'Grupo', value: (c) => c.group?.name ?? '' },
+              ]),
+            ],
+            { type: 'text/csv;charset=utf-8' },
+          ),
+          'contactos.csv',
+        ),
+    },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -69,49 +122,30 @@ export default function ContactsPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {/* CSV Export with FeatureGate */}
-          <FeatureGate
-            feature="contacts_export"
-            fallback={
-              <button
-                disabled
-                title="Actualiza tu plan para exportar contactos"
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-not-allowed"
-              >
-                <Download className="w-4 h-4" />
-                Exportar CSV
-              </button>
-            }
-          >
-            <button
-              onClick={() => {
-                const csvContent = [
-                  ['Nombre', 'Email', 'Teléfono', 'Empresa', 'Cargo', 'Grupo'].join(','),
-                  ...filteredContacts.map((c) =>
-                    [
-                      c.name,
-                      c.email,
-                      c.phone ?? '',
-                      c.company ?? '',
-                      c.job_title ?? '',
-                      c.group?.name ?? '',
-                    ].join(','),
-                  ),
-                ].join('\n')
-                const blob = new Blob([csvContent], { type: 'text/csv' })
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = 'contactos.csv'
-                a.click()
-                URL.revokeObjectURL(url)
-              }}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Exportar CSV
-            </button>
-          </FeatureGate>
+          <ImportButton
+            feature="contact_import"
+            disabledHint="Actualiza tu plan para importar contactos"
+            renderModal={(close) => (
+              <ImportModal
+                title="Importar contactos"
+                accept=".vcf,.csv"
+                formatsHint="vCard (.vcf) o CSV"
+                parse={parseContacts}
+                columns={[
+                  { label: 'Nombre', value: (c) => c.name ?? '' },
+                  { label: 'Email', value: (c) => c.email ?? '' },
+                  { label: 'Teléfono', value: (c) => c.phone ?? '' },
+                ]}
+                onImport={(items) => importContacts.mutateAsync(items)}
+                onClose={close}
+              />
+            )}
+          />
+          <ExportMenu
+            feature="contact_export"
+            formats={exportFormats}
+            disabledHint="Actualiza tu plan para exportar contactos"
+          />
 
           <button
             onClick={() => {

@@ -3,6 +3,12 @@ import { Plus, FileText, Pin, LayoutGrid, LayoutList } from 'lucide-react'
 import { useNotes } from './hooks/useNotes'
 import { useDeleteNote } from './hooks/useDeleteNote'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
+import { useImportNotes } from './hooks/useImportNotes'
+import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
+import ImportButton from '@/components/shared/ImportButton'
+import ImportModal from '@/components/shared/ImportModal'
+import { toCSV, toJSON, toMarkdownZip, downloadBlob } from '@/lib/export'
+import { parseNotesFile } from '@/lib/import'
 import { NoteFilters } from './components/NoteFilters'
 import { NoteCard } from './components/NoteCard'
 import { NoteModal } from './components/NoteModal'
@@ -20,6 +26,7 @@ export default function NotesPage() {
 
   const { data, isLoading } = useNotes(filters)
   const deleteNote = useDeleteNote()
+  const importNotes = useImportNotes()
   const { data: summaryData } = useDashboardSummary()
 
   const allNotes = data?.notes ?? []
@@ -63,6 +70,51 @@ export default function NotesPage() {
   const gridClass = 'grid grid-cols-1 lg:grid-cols-2 gap-4'
   const listClass = 'flex flex-col gap-4'
 
+  const exportFormats: ExportFormat[] = [
+    {
+      id: 'md',
+      label: 'Markdown (.zip)',
+      run: async () => {
+        const blob = await toMarkdownZip(
+          filteredNotes.map((n) => ({
+            title: n.title,
+            content: n.content,
+            category: n.category,
+            tags: n.tags,
+            created_at: n.created_at,
+          })),
+        )
+        downloadBlob(blob, 'notas.zip')
+      },
+    },
+    {
+      id: 'json',
+      label: 'JSON',
+      run: () =>
+        downloadBlob(new Blob([toJSON(filteredNotes)], { type: 'application/json' }), 'notas.json'),
+    },
+    {
+      id: 'csv',
+      label: 'CSV (metadatos)',
+      run: () =>
+        downloadBlob(
+          new Blob(
+            [
+              toCSV(filteredNotes, [
+                { label: 'Título', value: (n) => n.title },
+                { label: 'Categoría', value: (n) => n.category },
+                { label: 'Tags', value: (n) => n.tags.join('; ') },
+                { label: 'Fijada', value: (n) => (n.is_pinned ? 'Sí' : 'No') },
+                { label: 'Creada', value: (n) => n.created_at },
+              ]),
+            ],
+            { type: 'text/csv;charset=utf-8' },
+          ),
+          'notas.csv',
+        ),
+    },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -73,16 +125,41 @@ export default function NotesPage() {
             Organiza tus ideas y apuntes
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditingNote(null)
-            setModalOpen(true)
-          }}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva Nota
-        </button>
+        <div className="flex items-center gap-2">
+          <ImportButton
+            feature="notes_import"
+            disabledHint="Actualiza tu plan para importar notas"
+            renderModal={(close) => (
+              <ImportModal
+                title="Importar notas"
+                accept=".zip,.json"
+                formatsHint="Markdown (.zip) o JSON"
+                parseFile={parseNotesFile}
+                columns={[
+                  { label: 'Título', value: (n) => n.title ?? '' },
+                  { label: 'Categoría', value: (n) => n.category ?? '' },
+                ]}
+                onImport={(items) => importNotes.mutateAsync(items)}
+                onClose={close}
+              />
+            )}
+          />
+          <ExportMenu
+            feature="notes_export"
+            formats={exportFormats}
+            disabledHint="Actualiza tu plan para exportar notas"
+          />
+          <button
+            onClick={() => {
+              setEditingNote(null)
+              setModalOpen(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Nota
+          </button>
+        </div>
       </div>
 
       {/* Plan limit banner */}

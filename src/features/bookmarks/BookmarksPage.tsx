@@ -1,10 +1,15 @@
 import { useState } from 'react'
-import { Plus, Bookmark, Download } from 'lucide-react'
+import { Plus, Bookmark } from 'lucide-react'
 import { useBookmarks } from './hooks/useBookmarks'
 import { useCollections } from './hooks/useCollections'
 import { useDeleteBookmark } from './hooks/useDeleteBookmark'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
-import FeatureGate from '@/components/shared/FeatureGate'
+import { useImportBookmarks } from './hooks/useImportBookmarks'
+import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
+import ImportButton from '@/components/shared/ImportButton'
+import ImportModal from '@/components/shared/ImportModal'
+import { toCSV, toJSON, toBookmarksHTML, downloadBlob } from '@/lib/export'
+import { parseBookmarks } from '@/lib/import'
 import { BookmarkFilters, EMPTY_FILTERS } from './components/BookmarkFilters'
 import { BookmarkCard } from './components/BookmarkCard'
 import { BookmarkModal } from './components/BookmarkModal'
@@ -18,6 +23,7 @@ export default function BookmarksPage() {
   const { data, isLoading } = useBookmarks(filters)
   const { data: collections = [] } = useCollections()
   const deleteBookmark = useDeleteBookmark()
+  const importBookmarks = useImportBookmarks()
   const { data: summaryData } = useDashboardSummary()
 
   const allBookmarks = data?.bookmarks ?? []
@@ -57,6 +63,48 @@ export default function BookmarksPage() {
     setBookmarkToEdit(null)
   }
 
+  const exportFormats: ExportFormat[] = [
+    {
+      id: 'html',
+      label: 'HTML (navegador)',
+      run: () =>
+        downloadBlob(
+          new Blob(
+            [toBookmarksHTML(filteredBookmarks.map((b) => ({ title: b.title, url: b.url, tags: b.tags })))],
+            { type: 'text/html;charset=utf-8' },
+          ),
+          'bookmarks.html',
+        ),
+    },
+    {
+      id: 'csv',
+      label: 'CSV',
+      run: () =>
+        downloadBlob(
+          new Blob(
+            [
+              toCSV(filteredBookmarks, [
+                { label: 'Título', value: (b) => b.title },
+                { label: 'URL', value: (b) => b.url },
+                { label: 'Descripción', value: (b) => b.description ?? '' },
+                { label: 'Colección', value: (b) => b.collection?.name ?? '' },
+                { label: 'Tags', value: (b) => b.tags.join('; ') },
+                { label: 'Favorito', value: (b) => (b.is_favorite ? 'Sí' : 'No') },
+              ]),
+            ],
+            { type: 'text/csv;charset=utf-8' },
+          ),
+          'bookmarks.csv',
+        ),
+    },
+    {
+      id: 'json',
+      label: 'JSON',
+      run: () =>
+        downloadBlob(new Blob([toJSON(filteredBookmarks)], { type: 'application/json' }), 'bookmarks.json'),
+    },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -68,49 +116,29 @@ export default function BookmarksPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {/* Export with FeatureGate */}
-          <FeatureGate
-            feature="bookmarks_export"
-            fallback={
-              <button
-                disabled
-                title="Actualiza tu plan para exportar bookmarks"
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-not-allowed"
-              >
-                <Download className="w-4 h-4" />
-                Exportar
-              </button>
-            }
-          >
-            <button
-              onClick={() => {
-                const csvContent = [
-                  ['Título', 'URL', 'Descripción', 'Colección', 'Tags', 'Favorito'].join(','),
-                  ...filteredBookmarks.map((b) =>
-                    [
-                      b.title,
-                      b.url,
-                      b.description ?? '',
-                      b.collection?.name ?? '',
-                      b.tags.join(';'),
-                      b.is_favorite ? 'Sí' : 'No',
-                    ].join(','),
-                  ),
-                ].join('\n')
-                const blob = new Blob([csvContent], { type: 'text/csv' })
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = 'bookmarks.csv'
-                a.click()
-                URL.revokeObjectURL(url)
-              }}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Exportar
-            </button>
-          </FeatureGate>
+          <ImportButton
+            feature="bookmark_import"
+            disabledHint="Actualiza tu plan para importar bookmarks"
+            renderModal={(close) => (
+              <ImportModal
+                title="Importar bookmarks"
+                accept=".html,.htm,.csv,.json"
+                formatsHint="HTML del navegador, CSV o JSON"
+                parse={parseBookmarks}
+                columns={[
+                  { label: 'Título', value: (b) => b.title ?? '' },
+                  { label: 'URL', value: (b) => b.url ?? '' },
+                ]}
+                onImport={(items) => importBookmarks.mutateAsync(items)}
+                onClose={close}
+              />
+            )}
+          />
+          <ExportMenu
+            feature="bookmark_export"
+            formats={exportFormats}
+            disabledHint="Actualiza tu plan para exportar bookmarks"
+          />
 
           <button
             onClick={() => {

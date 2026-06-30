@@ -5,6 +5,12 @@ import { useTasks } from './hooks/useTasks'
 import { useDeleteTask } from './hooks/useDeleteTask'
 import { useFeatureGate } from '@/hooks/useFeatureGate'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
+import { useImportTasks } from './hooks/useImportTasks'
+import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
+import ImportButton from '@/components/shared/ImportButton'
+import ImportModal from '@/components/shared/ImportModal'
+import { toCSV, toJSON, downloadBlob } from '@/lib/export'
+import { parseTasksFile } from '@/lib/import'
 import { TaskFilters } from './components/TaskFilters'
 import { TaskListView } from './components/TaskListView'
 import { TaskKanbanView } from './components/TaskKanbanView'
@@ -22,6 +28,7 @@ export default function TasksPage() {
 
   const { data, isLoading } = useTasks(filters)
   const deleteTask = useDeleteTask()
+  const importTasks = useImportTasks()
   const { hasFeature } = useFeatureGate()
   const { data: summaryData } = useDashboardSummary()
 
@@ -48,21 +55,76 @@ export default function TasksPage() {
 
   const kanbanDisabled = !hasFeature('kanban_view')
 
+  const exportFormats: ExportFormat[] = [
+    {
+      id: 'csv',
+      label: 'CSV',
+      run: () =>
+        downloadBlob(
+          new Blob(
+            [
+              toCSV(tasks, [
+                { label: 'Título', value: (t) => t.title },
+                { label: 'Descripción', value: (t) => t.description ?? '' },
+                { label: 'Estado', value: (t) => t.status },
+                { label: 'Prioridad', value: (t) => t.priority },
+                { label: 'Vencimiento', value: (t) => t.due_date ?? '' },
+                { label: 'Creada', value: (t) => t.created_at },
+              ]),
+            ],
+            { type: 'text/csv;charset=utf-8' },
+          ),
+          'tareas.csv',
+        ),
+    },
+    {
+      id: 'json',
+      label: 'JSON',
+      run: () => downloadBlob(new Blob([toJSON(tasks)], { type: 'application/json' }), 'tareas.json'),
+    },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Tareas</h1>
-        <button
-          onClick={() => {
-            setEditingTask(null)
-            setModalOpen(true)
-          }}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva Tarea
-        </button>
+        <div className="flex items-center gap-2">
+          <ImportButton
+            feature="tasks_import"
+            disabledHint="Actualiza tu plan para importar tareas"
+            renderModal={(close) => (
+              <ImportModal
+                title="Importar tareas"
+                accept=".csv,.json"
+                formatsHint="CSV o JSON"
+                parseFile={parseTasksFile}
+                columns={[
+                  { label: 'Título', value: (t) => t.title ?? '' },
+                  { label: 'Estado', value: (t) => t.status ?? '' },
+                  { label: 'Prioridad', value: (t) => t.priority ?? '' },
+                ]}
+                onImport={(items) => importTasks.mutateAsync(items)}
+                onClose={close}
+              />
+            )}
+          />
+          <ExportMenu
+            feature="tasks_export"
+            formats={exportFormats}
+            disabledHint="Actualiza tu plan para exportar tareas"
+          />
+          <button
+            onClick={() => {
+              setEditingTask(null)
+              setModalOpen(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Tarea
+          </button>
+        </div>
       </div>
 
       {/* Plan limit banner */}

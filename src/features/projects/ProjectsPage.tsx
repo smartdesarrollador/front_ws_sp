@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Plus, Download } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useProjects } from './hooks/useProjects'
 import { useDeleteProject } from './hooks/useDeleteProject'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
-import FeatureGate from '@/components/shared/FeatureGate'
+import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
+import { toJSON, downloadBlob } from '@/lib/export'
 import { ProjectList } from './components/ProjectList'
 import { ProjectModal } from './components/ProjectModal'
 import ProjectDetail from './components/ProjectDetail'
@@ -42,6 +43,18 @@ export default function ProjectsPage() {
     setProjectToEdit(null)
   }
 
+  // Project metadata only — credential fields/secrets live behind the detail
+  // view and are never included in this client-side export. Use the full
+  // backup (Settings) for a deep export with masked secrets.
+  const exportFormats: ExportFormat[] = [
+    {
+      id: 'json',
+      label: 'JSON (metadatos)',
+      run: () =>
+        downloadBlob(new Blob([toJSON(allProjects)], { type: 'application/json' }), 'proyectos.json'),
+    },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -55,25 +68,11 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-2">
           <ViewModeToggle mode={viewMode} onChange={setViewMode} />
 
-          {/* Export with FeatureGate */}
-          <FeatureGate
-            feature="projects_export"
-            fallback={
-              <button
-                disabled
-                title="Actualiza tu plan para exportar proyectos"
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-not-allowed"
-              >
-                <Download className="w-4 h-4" />
-                Exportar
-              </button>
-            }
-          >
-            <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-              <Download className="w-4 h-4" />
-              Exportar
-            </button>
-          </FeatureGate>
+          <ExportMenu
+            feature="project_export"
+            formats={exportFormats}
+            disabledHint="Actualiza tu plan para exportar proyectos"
+          />
 
           <button
             onClick={() => {
