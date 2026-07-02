@@ -17,7 +17,7 @@ export default function ProtectedRoute() {
   }
 
   if (!isAuthenticated) {
-    window.location.href = `${HUB_URL}/login?next=workspace`
+    window.location.href = HUB_URL
     return null
   }
 
