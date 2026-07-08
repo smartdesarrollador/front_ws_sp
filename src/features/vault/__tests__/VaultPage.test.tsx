@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import VaultPage from '../VaultPage'
@@ -8,19 +8,40 @@ import { useVaultItems } from '../hooks/useVaultItems'
 import { useLockVault } from '../hooks/useLockVault'
 import { useUnlockVault } from '../hooks/useUnlockVault'
 import { useRevealVaultItem, useDeleteVaultItem } from '../hooks/useVaultItemMutations'
+import {
+  useSharedVaultItems,
+  useRevealSharedVaultItem,
+  useItemShares,
+  useShareVaultItem,
+  useRevokeVaultShare,
+} from '../hooks/useVaultSharing'
+import { useTeamDirectory } from '@/features/sharing/hooks/useTeamDirectory'
 import { useFeatureGate } from '@/hooks/useFeatureGate'
 import { useVaultStore } from '@/store/vaultStore'
-import type { VaultItem } from '../types'
+import type { SharedVaultItem, VaultItem } from '../types'
 
 vi.mock('../hooks/useVaultStatus')
 vi.mock('../hooks/useVaultItems')
 vi.mock('../hooks/useLockVault')
 vi.mock('../hooks/useUnlockVault')
 vi.mock('../hooks/useVaultItemMutations')
+vi.mock('../hooks/useVaultSharing')
+vi.mock('@/features/sharing/hooks/useTeamDirectory')
 vi.mock('@/hooks/useFeatureGate')
 
 const mockItems: VaultItem[] = [
   { id: '1', title: 'GitHub', item_type: 'login', favorite: false, created_at: '2026-01-01', updated_at: '2026-01-01' },
+]
+
+const mockSharedItems: SharedVaultItem[] = [
+  {
+    share_id: 'sh-1',
+    item_id: 'item-2',
+    title: 'Shared Login',
+    item_type: 'login',
+    shared_by_name: 'Otro Usuario',
+    created_at: '2026-01-02',
+  },
 ]
 
 function renderPage() {
@@ -61,6 +82,29 @@ beforeEach(() => {
   vi.mocked(useUnlockVault).mockReturnValue({ mutate: vi.fn(), isPending: false, isError: false } as unknown as ReturnType<typeof useUnlockVault>)
   vi.mocked(useRevealVaultItem).mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof useRevealVaultItem>)
   vi.mocked(useDeleteVaultItem).mockReturnValue({ mutate: vi.fn() } as unknown as ReturnType<typeof useDeleteVaultItem>)
+  vi.mocked(useSharedVaultItems).mockReturnValue({
+    data: [],
+    isLoading: false,
+  } as unknown as ReturnType<typeof useSharedVaultItems>)
+  vi.mocked(useRevealSharedVaultItem).mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+  } as unknown as ReturnType<typeof useRevealSharedVaultItem>)
+  vi.mocked(useItemShares).mockReturnValue({
+    data: [],
+    isLoading: false,
+  } as unknown as ReturnType<typeof useItemShares>)
+  vi.mocked(useShareVaultItem).mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+  } as unknown as ReturnType<typeof useShareVaultItem>)
+  vi.mocked(useRevokeVaultShare).mockReturnValue({
+    mutate: vi.fn(),
+  } as unknown as ReturnType<typeof useRevokeVaultShare>)
+  vi.mocked(useTeamDirectory).mockReturnValue({
+    data: [],
+    isLoading: false,
+  } as unknown as ReturnType<typeof useTeamDirectory>)
 })
 
 describe('VaultPage', () => {
@@ -96,5 +140,56 @@ describe('VaultPage', () => {
     })
     renderPage()
     expect(screen.queryByText('Bóveda bloqueada')).not.toBeInTheDocument()
+  })
+
+  it('shows shared items with the "Compartido" badge alongside own items', () => {
+    setStatus(true)
+    useVaultStore.getState().unlock('tok', 900)
+    vi.mocked(useSharedVaultItems).mockReturnValue({
+      data: mockSharedItems,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useSharedVaultItems>)
+    renderPage()
+    expect(screen.getByText('GitHub')).toBeInTheDocument()
+    expect(screen.getByText('Shared Login')).toBeInTheDocument()
+    expect(screen.getByText('Compartido')).toBeInTheDocument()
+    expect(screen.getByTitle('Compartido por Otro Usuario')).toBeInTheDocument()
+    // Combined count badge: 1 own + 1 shared.
+    expect(screen.getByText('2')).toBeInTheDocument()
+  })
+
+  it('opens the share modal when clicking the share button on an own item', () => {
+    setStatus(true)
+    useVaultStore.getState().unlock('tok', 900)
+    renderPage()
+    fireEvent.click(screen.getByLabelText('Compartir'))
+    expect(screen.getByText('Compartir elemento')).toBeInTheDocument()
+  })
+
+  it('reveals a shared item in a read-only modal', () => {
+    setStatus(true)
+    useVaultStore.getState().unlock('tok', 900)
+    const mutate = vi.fn((_shareId, options) => {
+      options.onSuccess({
+        share_id: 'sh-1',
+        item_id: 'item-2',
+        title: 'Shared Login',
+        item_type: 'login',
+        shared_by_name: 'Otro Usuario',
+        data: { username: 'bob', password: 'hunter2' },
+      })
+    })
+    vi.mocked(useSharedVaultItems).mockReturnValue({
+      data: mockSharedItems,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useSharedVaultItems>)
+    vi.mocked(useRevealSharedVaultItem).mockReturnValue({
+      mutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useRevealSharedVaultItem>)
+
+    renderPage()
+    fireEvent.click(screen.getByLabelText('Ver'))
+    expect(screen.getByText('Compartido por Otro Usuario · solo lectura')).toBeInTheDocument()
   })
 })

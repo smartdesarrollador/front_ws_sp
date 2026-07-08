@@ -42,3 +42,25 @@ export interface UnlockResponse {
 export interface SetupResponse {
   recovery_code: string
 }
+
+// ── Sharing ──────────────────────────────────────────────────────────────────
+
+export interface VaultShare {
+  id: string
+  shared_with_email: string
+  shared_with_name: string
+  created_at: string
+}
+
+export interface SharedVaultItem {
+  share_id: string
+  item_id: string
+  title: string
+  item_type: VaultItemType
+  shared_by_name: string
+  created_at: string
+}
+
+export interface SharedVaultItemRevealed extends SharedVaultItem {
+  data: VaultData
+}

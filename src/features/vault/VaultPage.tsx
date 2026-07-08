@@ -8,10 +8,14 @@ import { useVaultStatus } from './hooks/useVaultStatus'
 import { useVaultItems } from './hooks/useVaultItems'
 import { useLockVault } from './hooks/useLockVault'
 import { useRevealVaultItem, useDeleteVaultItem } from './hooks/useVaultItemMutations'
+import { useSharedVaultItems, useRevealSharedVaultItem } from './hooks/useVaultSharing'
 import { UnlockPrompt } from './components/UnlockPrompt'
 import { VaultItemRow } from './components/VaultItemRow'
+import { SharedVaultItemRow } from './components/SharedVaultItemRow'
 import { VaultItemModal } from './components/VaultItemModal'
-import type { VaultItem, VaultItemRevealed } from './types'
+import { VaultShareModal } from './components/VaultShareModal'
+import { SharedVaultItemViewModal } from './components/SharedVaultItemViewModal'
+import type { SharedVaultItemRevealed, VaultItem, VaultItemRevealed } from './types'
 
 export default function VaultPage() {
   return (
@@ -35,13 +39,17 @@ function VaultContent() {
   const [, setTick] = useState(0)
   const [showModal, setShowModal] = useState(false)
   const [itemToEdit, setItemToEdit] = useState<VaultItemRevealed | null>(null)
+  const [itemToShare, setItemToShare] = useState<VaultItem | null>(null)
+  const [sharedItemToView, setSharedItemToView] = useState<SharedVaultItemRevealed | null>(null)
 
   const { data: status, isLoading: loadingStatus } = useVaultStatus()
   const unlocked = isUnlockedFn()
   const { data: itemsData, isLoading: loadingItems } = useVaultItems({}, Boolean(status?.is_configured))
+  const { data: sharedItems = [], isLoading: loadingShared } = useSharedVaultItems(unlocked)
   const lockVault = useLockVault()
   const revealItem = useRevealVaultItem()
   const deleteItem = useDeleteVaultItem()
+  const revealSharedItem = useRevealSharedVaultItem()
 
   const items = itemsData?.items ?? []
 
@@ -65,6 +73,12 @@ function VaultContent() {
   const handleNew = () => {
     setItemToEdit(null)
     setShowModal(true)
+  }
+
+  const handleRevealShared = (item: (typeof sharedItems)[number]) => {
+    revealSharedItem.mutate(item.share_id, {
+      onSuccess: (revealed) => setSharedItemToView(revealed),
+    })
   }
 
   if (loadingStatus) {
@@ -102,7 +116,7 @@ function VaultContent() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Bóveda</h1>
           <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-            {items.length}
+            {items.length + sharedItems.length}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -126,9 +140,9 @@ function VaultContent() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        {loadingItems ? (
+        {loadingItems || loadingShared ? (
           <div className="py-16 text-center text-sm text-gray-400">Cargando elementos...</div>
-        ) : items.length === 0 ? (
+        ) : items.length === 0 && sharedItems.length === 0 ? (
           <div className="py-16 text-center">
             <KeyRound className="mx-auto mb-4 h-12 w-12 text-gray-300 dark:text-gray-600" />
             <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">Bóveda vacía</h3>
@@ -156,7 +170,16 @@ function VaultContent() {
                   item={item}
                   onReveal={handleReveal}
                   onDelete={(id) => deleteItem.mutate(id)}
+                  onShare={(i) => setItemToShare(i)}
                   isRevealing={revealItem.isPending}
+                />
+              ))}
+              {sharedItems.map((item) => (
+                <SharedVaultItemRow
+                  key={item.share_id}
+                  item={item}
+                  onReveal={handleRevealShared}
+                  isRevealing={revealSharedItem.isPending}
                 />
               ))}
             </tbody>
@@ -166,6 +189,21 @@ function VaultContent() {
 
       {showModal && (
         <VaultItemModal item={itemToEdit} onClose={() => setShowModal(false)} />
+      )}
+
+      {itemToShare && (
+        <VaultShareModal
+          itemId={itemToShare.id}
+          itemTitle={itemToShare.title}
+          onClose={() => setItemToShare(null)}
+        />
+      )}
+
+      {sharedItemToView && (
+        <SharedVaultItemViewModal
+          item={sharedItemToView}
+          onClose={() => setSharedItemToView(null)}
+        />
       )}
     </div>
   )
