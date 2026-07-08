@@ -7,6 +7,9 @@ interface Props {
   onEdit: (c: Contact) => void
   onDelete: (id: string) => void
   onShare: (c: Contact) => void
+  selectionMode?: boolean
+  selected?: boolean
+  onToggleSelect?: (id: string) => void
 }
 
 const PALETTE = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
@@ -25,7 +28,15 @@ function getInitials(name: string): string {
     .toUpperCase()
 }
 
-export function ContactCard({ contact, onEdit, onDelete, onShare }: Props) {
+export function ContactCard({
+  contact,
+  onEdit,
+  onDelete,
+  onShare,
+  selectionMode = false,
+  selected = false,
+  onToggleSelect,
+}: Props) {
   const handleDelete = () => {
     if (window.confirm(`¿Eliminar el contacto "${contact.name}"?`)) {
       onDelete(contact.id)
@@ -36,15 +47,37 @@ export function ContactCard({ contact, onEdit, onDelete, onShare }: Props) {
   const initials = getInitials(contact.name)
 
   return (
-    <div className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow">
+    <div
+      onClick={selectionMode ? () => onToggleSelect?.(contact.id) : undefined}
+      className={`group bg-white dark:bg-gray-800 rounded-lg border p-4 shadow-sm hover:shadow-md transition-shadow ${
+        selectionMode ? 'cursor-pointer' : ''
+      } ${
+        selected
+          ? 'border-primary-400 dark:border-primary-600 ring-2 ring-primary-200 dark:ring-primary-900'
+          : 'border-gray-200 dark:border-gray-700'
+      }`}
+    >
       <div className="flex items-start gap-3">
-        {/* Avatar */}
-        <div
-          className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
-          style={{ backgroundColor: avatarColor }}
-        >
-          {initials}
-        </div>
+        {/* Avatar / selection checkbox */}
+        {selectionMode ? (
+          <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center">
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={() => onToggleSelect?.(contact.id)}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Seleccionar ${contact.name}`}
+              className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+          </div>
+        ) : (
+          <div
+            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+            style={{ backgroundColor: avatarColor }}
+          >
+            {initials}
+          </div>
+        )}
 
         {/* Info */}
         <div className="flex-1 min-w-0">
@@ -52,30 +85,32 @@ export function ContactCard({ contact, onEdit, onDelete, onShare }: Props) {
             <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
               {contact.name}
             </h3>
-            {/* Action buttons — visible on hover */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-              <button
-                onClick={() => onShare(contact)}
-                aria-label="Compartir contacto"
-                className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => onEdit(contact)}
-                aria-label="Editar contacto"
-                className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={handleDelete}
-                aria-label="Eliminar contacto"
-                className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            {/* Action buttons — visible on hover, hidden in selection mode */}
+            {!selectionMode && (
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                <button
+                  onClick={() => onShare(contact)}
+                  aria-label="Compartir contacto"
+                  className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => onEdit(contact)}
+                  aria-label="Editar contacto"
+                  className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  aria-label="Eliminar contacto"
+                  className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-1 mt-0.5">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Code2 } from 'lucide-react'
+import { Plus, Code2, CheckSquare } from 'lucide-react'
 import { useSnippets } from './hooks/useSnippets'
 import { useDeleteSnippet } from './hooks/useDeleteSnippet'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
@@ -9,13 +9,16 @@ import { SnippetFilters, EMPTY_FILTERS } from './components/SnippetFilters'
 import { SnippetCard } from './components/SnippetCard'
 import { SnippetModal } from './components/SnippetModal'
 import { ShareResourceModal } from '@/features/sharing/components/ShareResourceModal'
+import { useBulkSelection } from '@/features/sharing/hooks/useBulkSelection'
+import { BulkActionBar } from '@/features/sharing/components/BulkActionBar'
 import type { CodeSnippet, SnippetFiltersState } from './types'
 
 export default function SnippetsPage() {
   const [showModal, setShowModal] = useState(false)
   const [snippetToEdit, setSnippetToEdit] = useState<CodeSnippet | null>(null)
-  const [snippetToShare, setSnippetToShare] = useState<CodeSnippet | null>(null)
+  const [shareResources, setShareResources] = useState<{ id: string; title: string }[] | null>(null)
   const [filters, setFilters] = useState<SnippetFiltersState>(EMPTY_FILTERS)
+  const bulk = useBulkSelection()
 
   const { data, isLoading } = useSnippets(filters)
   const deleteSnippet = useDeleteSnippet()
@@ -56,6 +59,18 @@ export default function SnippetsPage() {
   const handleCloseModal = () => {
     setShowModal(false)
     setSnippetToEdit(null)
+  }
+
+  const handleBulkShare = () => {
+    const selected = filteredSnippets
+      .filter((s) => bulk.selectedIds.has(s.id))
+      .map((s) => ({ id: s.id, title: s.title }))
+    setShareResources(selected)
+  }
+
+  const handleCloseShareModal = () => {
+    setShareResources(null)
+    bulk.exitSelection()
   }
 
   const exportFormats: ExportFormat[] = [
@@ -124,6 +139,25 @@ export default function SnippetsPage() {
         />
       </div>
 
+      {/* Bulk selection toolbar */}
+      {bulk.isSelecting ? (
+        <BulkActionBar
+          count={bulk.selectedIds.size}
+          onShare={handleBulkShare}
+          onCancel={bulk.exitSelection}
+        />
+      ) : (
+        <div className="flex justify-end">
+          <button
+            onClick={bulk.toggleSelecting}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <CheckSquare className="w-4 h-4" />
+            Seleccionar
+          </button>
+        </div>
+      )}
+
       {/* Content */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -149,7 +183,10 @@ export default function SnippetsPage() {
               snippet={snippet}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onShare={setSnippetToShare}
+              onShare={(s) => setShareResources([{ id: s.id, title: s.title }])}
+              selectionMode={bulk.isSelecting}
+              selected={bulk.selectedIds.has(snippet.id)}
+              onToggleSelect={bulk.toggleId}
             />
           ))}
         </div>
@@ -157,12 +194,11 @@ export default function SnippetsPage() {
 
       {/* Modals */}
       {showModal && <SnippetModal snippet={snippetToEdit} onClose={handleCloseModal} />}
-      {snippetToShare && (
+      {shareResources && (
         <ShareResourceModal
           resourceType="snippet"
-          resourceId={snippetToShare.id}
-          resourceTitle={snippetToShare.title}
-          onClose={() => setSnippetToShare(null)}
+          resources={shareResources}
+          onClose={handleCloseShareModal}
         />
       )}
     </div>

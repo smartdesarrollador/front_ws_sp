@@ -15,6 +15,11 @@ vi.mock('../hooks/useCreateNote')
 vi.mock('../hooks/useUpdateNote')
 vi.mock('../hooks/useDeleteNote')
 vi.mock('@/features/dashboard/hooks/useDashboardSummary')
+vi.mock('@/features/sharing/components/ShareResourceModal', () => ({
+  ShareResourceModal: ({ resources }: { resources: { id: string; title: string }[] }) => (
+    <div data-testid="share-modal">{resources.length} recursos a compartir</div>
+  ),
+}))
 
 const mockNotes: Note[] = [
   {
@@ -232,5 +237,18 @@ describe('NotesPage', () => {
 
     renderNotesPage()
     expect(screen.getByText('No hay notas')).toBeInTheDocument()
+  })
+
+  it('permite seleccionar varias notas y compartirlas en lote', () => {
+    renderNotesPage()
+
+    fireEvent.click(screen.getByText('Seleccionar'))
+    fireEvent.click(screen.getByLabelText('Seleccionar Meeting notes'))
+    fireEvent.click(screen.getByLabelText('Seleccionar Grocery list'))
+
+    expect(screen.getByText('2 seleccionadas')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartir' }))
+    expect(screen.getByTestId('share-modal')).toHaveTextContent('2 recursos a compartir')
   })
 })

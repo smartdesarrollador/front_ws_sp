@@ -19,6 +19,11 @@ vi.mock('../hooks/useUpdateContact')
 vi.mock('../hooks/useDeleteContact')
 vi.mock('@/features/dashboard/hooks/useDashboardSummary')
 vi.mock('@/hooks/useFeatureGate')
+vi.mock('@/features/sharing/components/ShareResourceModal', () => ({
+  ShareResourceModal: ({ resources }: { resources: { id: string; title: string }[] }) => (
+    <div data-testid="share-modal">{resources.length} recursos a compartir</div>
+  ),
+}))
 
 const mockGroups: ContactGroup[] = [
   { id: 'g1', name: 'Clientes', color: '#3B82F6', contacts_count: 2 },
@@ -230,5 +235,18 @@ describe('ContactsPage', () => {
     renderContactsPage()
     const exportBtn = screen.getByRole('button', { name: /Exportar/i })
     expect(exportBtn).toBeDisabled()
+  })
+
+  it('permite seleccionar varios contactos y compartirlos en lote', () => {
+    renderContactsPage()
+
+    fireEvent.click(screen.getByText('Seleccionar'))
+    fireEvent.click(screen.getByLabelText('Seleccionar Ana García'))
+    fireEvent.click(screen.getByLabelText('Seleccionar Carlos Ruiz'))
+
+    expect(screen.getByText('2 seleccionadas')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartir' }))
+    expect(screen.getByTestId('share-modal')).toHaveTextContent('2 recursos a compartir')
   })
 })

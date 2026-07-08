@@ -28,22 +28,36 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+interface ShareResource {
+  id: string
+  title: string
+}
+
 interface Props {
   resourceType: 'snippet' | 'note' | 'contact'
-  resourceId: string
-  resourceTitle: string
+  resources: ShareResource[]
   onClose: () => void
 }
 
-export function ShareResourceModal({ resourceType, resourceId, resourceTitle, onClose }: Props) {
+interface BulkResult {
+  succeeded: number
+  failed: number
+  total: number
+}
+
+export function ShareResourceModal({ resourceType, resources, onClose }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef, true)
 
-  const { data: shares = [], isLoading } = useResourceShares(resourceType, resourceId)
+  const isBulk = resources.length > 1
+  const singleResourceId = resources.length === 1 ? resources[0].id : ''
+
+  const { data: shares = [], isLoading } = useResourceShares(resourceType, singleResourceId)
   const { data: teammates = [] } = useTeamDirectory()
   const createShare = useCreateShare()
   const revokeShare = useRevokeShare()
   const [inviteError, setInviteError] = useState<string | null>(null)
+  const [bulkResult, setBulkResult] = useState<BulkResult | null>(null)
 
   const {
     register,
@@ -56,27 +70,50 @@ export function ShareResourceModal({ resourceType, resourceId, resourceTitle, on
     defaultValues: { email: '', permission_level: 'viewer' },
   })
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     setInviteError(null)
-    createShare.mutate(
-      {
-        resource_type: resourceType,
-        resource_id: resourceId,
-        shared_with_email: data.email,
-        permission_level: data.permission_level,
-      },
-      {
-        onSuccess: () => reset(),
-        onError: (error) => {
-          if ((error as { response?: { status?: number } }).response?.status === 402) {
-            setInviteError('Para compartir necesitas un plan superior. Actualiza tu plan para desbloquear esta función.')
-          } else {
-            setInviteError('No se pudo compartir. Verifica el email.')
-          }
+    setBulkResult(null)
+
+    if (!isBulk) {
+      createShare.mutate(
+        {
+          resource_type: resourceType,
+          resource_id: resources[0].id,
+          shared_with_email: data.email,
+          permission_level: data.permission_level,
         },
-      },
+        {
+          onSuccess: () => reset(),
+          onError: (error) => {
+            if ((error as { response?: { status?: number } }).response?.status === 402) {
+              setInviteError('Para compartir necesitas un plan superior. Actualiza tu plan para desbloquear esta función.')
+            } else {
+              setInviteError('No se pudo compartir. Verifica el email.')
+            }
+          },
+        },
+      )
+      return
+    }
+
+    const results = await Promise.allSettled(
+      resources.map((r) =>
+        createShare.mutateAsync({
+          resource_type: resourceType,
+          resource_id: r.id,
+          shared_with_email: data.email,
+          permission_level: data.permission_level,
+        }),
+      ),
     )
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length
+    const failed = results.length - succeeded
+    setBulkResult({ succeeded, failed, total: results.length })
+    if (failed === 0) reset()
   }
+
+  const title = isBulk ? `Compartir ${resources.length} elementos` : `Compartir ${RESOURCE_LABELS[resourceType]}`
+  const subtitle = isBulk ? resources.map((r) => r.title).join(', ') : (resources[0]?.title ?? '')
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -93,10 +130,10 @@ export function ShareResourceModal({ resourceType, resourceId, resourceTitle, on
               id="share-resource-modal-title"
               className="text-lg font-semibold text-gray-900 dark:text-gray-100"
             >
-              Compartir {RESOURCE_LABELS[resourceType]}
+              {title}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
-              {resourceTitle}
+              {subtitle}
             </p>
           </div>
           <button
@@ -117,6 +154,21 @@ export function ShareResourceModal({ resourceType, resourceId, resourceTitle, on
             {inviteError && (
               <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg p-3 text-sm">
                 {inviteError}
+              </div>
+            )}
+            {bulkResult && (
+              <div
+                className={`rounded-lg p-3 text-sm ${
+                  bulkResult.failed === 0
+                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                    : 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400'
+                }`}
+              >
+                {bulkResult.failed === 0
+                  ? `${bulkResult.succeeded} de ${bulkResult.total} compartidos correctamente.`
+                  : `${bulkResult.succeeded} de ${bulkResult.total} compartidos — ${bulkResult.failed} ${
+                      bulkResult.failed === 1 ? 'falló' : 'fallaron'
+                    }.`}
               </div>
             )}
             {teammates.length > 0 && (
@@ -171,59 +223,61 @@ export function ShareResourceModal({ resourceType, resourceId, resourceTitle, on
             </button>
           </form>
 
-          {/* Current shares list */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Con acceso
-            </h3>
-            {isLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="animate-pulse h-10 rounded-lg bg-gray-200 dark:bg-gray-700" />
-                ))}
-              </div>
-            ) : shares.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Nadie tiene acceso aún.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {shares.map((share) => (
-                  <div
-                    key={share.id}
-                    className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {share.shared_with_name}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {share.shared_with_email}
-                      </p>
+          {/* Current shares list — only meaningful for a single resource */}
+          {!isBulk && (
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Con acceso
+              </h3>
+              {isLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="animate-pulse h-10 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                  ))}
+                </div>
+              ) : shares.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Nadie tiene acceso aún.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {shares.map((share) => (
+                    <div
+                      key={share.id}
+                      className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {share.shared_with_name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {share.shared_with_email}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-gray-700 dark:text-gray-300">
+                          {PERMISSION_LABELS[share.permission_level] ?? share.permission_level}
+                        </span>
+                        <button
+                          onClick={() =>
+                            revokeShare.mutate({
+                              shareId: share.id,
+                              resourceType,
+                              resourceId: singleResourceId,
+                            })
+                          }
+                          aria-label={`Revocar acceso de ${share.shared_with_name}`}
+                          className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-gray-700 dark:text-gray-300">
-                        {PERMISSION_LABELS[share.permission_level] ?? share.permission_level}
-                      </span>
-                      <button
-                        onClick={() =>
-                          revokeShare.mutate({
-                            shareId: share.id,
-                            resourceType,
-                            resourceId,
-                          })
-                        }
-                        aria-label={`Revocar acceso de ${share.shared_with_name}`}
-                        className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

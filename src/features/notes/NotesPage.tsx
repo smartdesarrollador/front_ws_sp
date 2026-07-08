@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, FileText, Pin, LayoutGrid, LayoutList } from 'lucide-react'
+import { Plus, FileText, Pin, LayoutGrid, LayoutList, CheckSquare } from 'lucide-react'
 import { useNotes } from './hooks/useNotes'
 import { useDeleteNote } from './hooks/useDeleteNote'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
@@ -13,6 +13,8 @@ import { NoteFilters } from './components/NoteFilters'
 import { NoteCard } from './components/NoteCard'
 import { NoteModal } from './components/NoteModal'
 import { ShareResourceModal } from '@/features/sharing/components/ShareResourceModal'
+import { useBulkSelection } from '@/features/sharing/hooks/useBulkSelection'
+import { BulkActionBar } from '@/features/sharing/components/BulkActionBar'
 import type { Note, NoteFiltersState } from './types'
 
 const EMPTY_FILTERS: NoteFiltersState = { search: '', category: '', pinned_only: false }
@@ -20,9 +22,10 @@ const EMPTY_FILTERS: NoteFiltersState = { search: '', category: '', pinned_only:
 export default function NotesPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingNote, setEditingNote] = useState<Note | null>(null)
-  const [noteToShare, setNoteToShare] = useState<Note | null>(null)
+  const [shareResources, setShareResources] = useState<{ id: string; title: string }[] | null>(null)
   const [filters, setFilters] = useState<NoteFiltersState>(EMPTY_FILTERS)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const bulk = useBulkSelection()
 
   const { data, isLoading } = useNotes(filters)
   const deleteNote = useDeleteNote()
@@ -65,6 +68,18 @@ export default function NotesPage() {
   const handleCloseModal = () => {
     setModalOpen(false)
     setEditingNote(null)
+  }
+
+  const handleBulkShare = () => {
+    const selected = filteredNotes
+      .filter((n) => bulk.selectedIds.has(n.id))
+      .map((n) => ({ id: n.id, title: n.title }))
+    setShareResources(selected)
+  }
+
+  const handleCloseShareModal = () => {
+    setShareResources(null)
+    bulk.exitSelection()
   }
 
   const gridClass = 'grid grid-cols-1 lg:grid-cols-2 gap-4'
@@ -175,6 +190,25 @@ export default function NotesPage() {
         <NoteFilters filters={filters} onChange={setFilters} totalCount={total} />
       </div>
 
+      {/* Bulk selection toolbar */}
+      {bulk.isSelecting ? (
+        <BulkActionBar
+          count={bulk.selectedIds.size}
+          onShare={handleBulkShare}
+          onCancel={bulk.exitSelection}
+        />
+      ) : (
+        <div className="flex justify-end">
+          <button
+            onClick={bulk.toggleSelecting}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <CheckSquare className="w-4 h-4" />
+            Seleccionar
+          </button>
+        </div>
+      )}
+
       {/* Pinned section — only when there are pinned notes and pinned_only filter is off */}
       {!filters.pinned_only && pinnedNotes.length > 0 && (
         <div>
@@ -186,7 +220,16 @@ export default function NotesPage() {
           </div>
           <div className={gridClass}>
             {pinnedNotes.map((note) => (
-              <NoteCard key={note.id} note={note} onEdit={handleEdit} onDelete={handleDelete} onShare={setNoteToShare} />
+              <NoteCard
+                key={note.id}
+                note={note}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onShare={(n) => setShareResources([{ id: n.id, title: n.title }])}
+                selectionMode={bulk.isSelecting}
+                selected={bulk.selectedIds.has(note.id)}
+                onToggleSelect={bulk.toggleId}
+              />
             ))}
           </div>
         </div>
@@ -249,19 +292,27 @@ export default function NotesPage() {
         ) : (
           <div className={viewMode === 'grid' ? gridClass : listClass}>
             {(filters.pinned_only ? filteredNotes : unpinnedNotes).map((note) => (
-              <NoteCard key={note.id} note={note} onEdit={handleEdit} onDelete={handleDelete} onShare={setNoteToShare} />
+              <NoteCard
+                key={note.id}
+                note={note}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onShare={(n) => setShareResources([{ id: n.id, title: n.title }])}
+                selectionMode={bulk.isSelecting}
+                selected={bulk.selectedIds.has(note.id)}
+                onToggleSelect={bulk.toggleId}
+              />
             ))}
           </div>
         )}
       </div>
 
       <NoteModal note={editingNote} open={modalOpen} onClose={handleCloseModal} />
-      {noteToShare && (
+      {shareResources && (
         <ShareResourceModal
           resourceType="note"
-          resourceId={noteToShare.id}
-          resourceTitle={noteToShare.title}
-          onClose={() => setNoteToShare(null)}
+          resources={shareResources}
+          onClose={handleCloseShareModal}
         />
       )}
     </div>

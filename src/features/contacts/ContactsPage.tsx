@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Users } from 'lucide-react'
+import { Plus, Users, CheckSquare } from 'lucide-react'
 import { useContacts } from './hooks/useContacts'
 import { useContactGroups } from './hooks/useContactGroups'
 import { useDeleteContact } from './hooks/useDeleteContact'
@@ -14,13 +14,16 @@ import { ContactFilters, EMPTY_FILTERS } from './components/ContactFilters'
 import { ContactCard } from './components/ContactCard'
 import { ContactModal } from './components/ContactModal'
 import { ShareResourceModal } from '@/features/sharing/components/ShareResourceModal'
+import { useBulkSelection } from '@/features/sharing/hooks/useBulkSelection'
+import { BulkActionBar } from '@/features/sharing/components/BulkActionBar'
 import type { Contact, ContactFiltersState } from './types'
 
 export default function ContactsPage() {
   const [showModal, setShowModal] = useState(false)
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null)
-  const [contactToShare, setContactToShare] = useState<Contact | null>(null)
+  const [shareResources, setShareResources] = useState<{ id: string; title: string }[] | null>(null)
   const [filters, setFilters] = useState<ContactFiltersState>(EMPTY_FILTERS)
+  const bulk = useBulkSelection()
 
   const { data, isLoading } = useContacts(filters)
   const { data: groups = [] } = useContactGroups()
@@ -62,6 +65,18 @@ export default function ContactsPage() {
   const handleCloseModal = () => {
     setShowModal(false)
     setContactToEdit(null)
+  }
+
+  const handleBulkShare = () => {
+    const selected = filteredContacts
+      .filter((c) => bulk.selectedIds.has(c.id))
+      .map((c) => ({ id: c.id, title: c.name }))
+    setShareResources(selected)
+  }
+
+  const handleCloseShareModal = () => {
+    setShareResources(null)
+    bulk.exitSelection()
   }
 
   const exportFormats: ExportFormat[] = [
@@ -178,6 +193,25 @@ export default function ContactsPage() {
         />
       </div>
 
+      {/* Bulk selection toolbar */}
+      {bulk.isSelecting ? (
+        <BulkActionBar
+          count={bulk.selectedIds.size}
+          onShare={handleBulkShare}
+          onCancel={bulk.exitSelection}
+        />
+      ) : (
+        <div className="flex justify-end">
+          <button
+            onClick={bulk.toggleSelecting}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <CheckSquare className="w-4 h-4" />
+            Seleccionar
+          </button>
+        </div>
+      )}
+
       {/* Content */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -203,7 +237,10 @@ export default function ContactsPage() {
               contact={contact}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onShare={setContactToShare}
+              onShare={(c) => setShareResources([{ id: c.id, title: c.name }])}
+              selectionMode={bulk.isSelecting}
+              selected={bulk.selectedIds.has(contact.id)}
+              onToggleSelect={bulk.toggleId}
             />
           ))}
         </div>
@@ -211,12 +248,11 @@ export default function ContactsPage() {
 
       {/* Modals */}
       {showModal && <ContactModal contact={contactToEdit} onClose={handleCloseModal} />}
-      {contactToShare && (
+      {shareResources && (
         <ShareResourceModal
           resourceType="contact"
-          resourceId={contactToShare.id}
-          resourceTitle={contactToShare.name}
-          onClose={() => setContactToShare(null)}
+          resources={shareResources}
+          onClose={handleCloseShareModal}
         />
       )}
     </div>

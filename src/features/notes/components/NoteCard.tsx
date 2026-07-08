@@ -9,9 +9,20 @@ interface Props {
   onEdit: (note: Note) => void
   onDelete: (id: string) => void
   onShare: (note: Note) => void
+  selectionMode?: boolean
+  selected?: boolean
+  onToggleSelect?: (id: string) => void
 }
 
-export function NoteCard({ note, onEdit, onDelete, onShare }: Props) {
+export function NoteCard({
+  note,
+  onEdit,
+  onDelete,
+  onShare,
+  selectionMode = false,
+  selected = false,
+  onToggleSelect,
+}: Props) {
   const [confirming, setConfirming] = useState(false)
 
   const handleDelete = () => {
@@ -27,18 +38,36 @@ export function NoteCard({ note, onEdit, onDelete, onShare }: Props) {
 
   return (
     <div
-      className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow relative border-l-4"
+      onClick={selectionMode ? () => onToggleSelect?.(note.id) : undefined}
+      className={`group bg-white dark:bg-gray-800 rounded-lg border p-4 shadow-sm hover:shadow-md transition-shadow relative border-l-4 ${
+        selectionMode ? 'cursor-pointer' : ''
+      } ${
+        selected
+          ? 'border-primary-400 dark:border-primary-600 ring-2 ring-primary-200 dark:ring-primary-900'
+          : 'border-gray-200 dark:border-gray-700'
+      }`}
       style={{ borderLeftColor: borderColor }}
     >
-      {/* Pin icon top-right */}
+      {/* Selection checkbox / pin icon top-right */}
       <div className="absolute top-3 right-3 flex items-center gap-1">
-        <Pin
-          className={`w-4 h-4 ${
-            note.is_pinned
-              ? 'text-yellow-500 fill-yellow-500'
-              : 'text-gray-300 dark:text-gray-600'
-          }`}
-        />
+        {selectionMode ? (
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => onToggleSelect?.(note.id)}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Seleccionar ${note.title}`}
+            className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+          />
+        ) : (
+          <Pin
+            className={`w-4 h-4 ${
+              note.is_pinned
+                ? 'text-yellow-500 fill-yellow-500'
+                : 'text-gray-300 dark:text-gray-600'
+            }`}
+          />
+        )}
       </div>
 
       {/* Title */}
@@ -87,34 +116,36 @@ export function NoteCard({ note, onEdit, onDelete, onShare }: Props) {
           <span className="text-xs text-gray-400 dark:text-gray-500">
             {new Date(note.created_at).toLocaleDateString('es-ES')}
           </span>
-          {/* Action buttons — visible on hover */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={() => onShare(note)}
-              aria-label="Compartir nota"
-              className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => onEdit(note)}
-              aria-label="Editar nota"
-              className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={handleDelete}
-              aria-label={confirming ? 'Confirmar eliminación' : 'Eliminar nota'}
-              className={`p-1 rounded ${
-                confirming
-                  ? 'text-red-600 bg-red-50 dark:bg-red-900/20'
-                  : 'text-gray-400 hover:text-red-600 dark:hover:text-red-400'
-              }`}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          {/* Action buttons — visible on hover, hidden in selection mode */}
+          {!selectionMode && (
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => onShare(note)}
+                aria-label="Compartir nota"
+                className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => onEdit(note)}
+                aria-label="Editar nota"
+                className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={handleDelete}
+                aria-label={confirming ? 'Confirmar eliminación' : 'Eliminar nota'}
+                className={`p-1 rounded ${
+                  confirming
+                    ? 'text-red-600 bg-red-50 dark:bg-red-900/20'
+                    : 'text-gray-400 hover:text-red-600 dark:hover:text-red-400'
+                }`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

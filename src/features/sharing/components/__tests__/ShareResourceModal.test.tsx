@@ -17,18 +17,15 @@ const mockTeammates = [
   { id: 'u-1', name: 'Cliente 109', email: 'cliente109@cliente.com' },
 ]
 
-function renderModal() {
+function renderModal(
+  resources: { id: string; title: string }[] = [{ id: 'note-1', title: 'Nota 1' }],
+) {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   return render(
     <QueryClientProvider client={qc}>
-      <ShareResourceModal
-        resourceType="note"
-        resourceId="note-1"
-        resourceTitle="Nota 1"
-        onClose={() => {}}
-      />
+      <ShareResourceModal resourceType="note" resources={resources} onClose={() => {}} />
     </QueryClientProvider>,
   )
 }
@@ -44,6 +41,7 @@ describe('ShareResourceModal', () => {
 
     vi.mocked(useCreateShare).mockReturnValue({
       mutate: vi.fn(),
+      mutateAsync: vi.fn().mockResolvedValue({}),
       isPending: false,
     } as unknown as ReturnType<typeof useCreateShare>)
 
@@ -108,5 +106,62 @@ describe('ShareResourceModal', () => {
         'Para compartir necesitas un plan superior. Actualiza tu plan para desbloquear esta función.',
       ),
     ).toBeInTheDocument()
+  })
+
+  describe('bulk mode (varios recursos)', () => {
+    const bulkResources = [
+      { id: 'n-1', title: 'Nota 1' },
+      { id: 'n-2', title: 'Nota 2' },
+      { id: 'n-3', title: 'Nota 3' },
+    ]
+
+    it('shows a combined title and hides "Con acceso" for multiple resources', () => {
+      renderModal(bulkResources)
+      expect(screen.getByText('Compartir 3 elementos')).toBeInTheDocument()
+      expect(screen.queryByText('Con acceso')).not.toBeInTheDocument()
+    })
+
+    it('shares all resources and reports full success', async () => {
+      const mutateAsync = vi.fn().mockResolvedValue({})
+      vi.mocked(useCreateShare).mockReturnValue({
+        mutate: vi.fn(),
+        mutateAsync,
+        isPending: false,
+      } as unknown as ReturnType<typeof useCreateShare>)
+
+      renderModal(bulkResources)
+      const emailInput = screen.getByPlaceholderText('correo@ejemplo.com')
+      fireEvent.change(emailInput, { target: { value: 'cliente109@cliente.com' } })
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Compartir' }))
+      })
+
+      expect(mutateAsync).toHaveBeenCalledTimes(3)
+      expect(await screen.findByText('3 de 3 compartidos correctamente.')).toBeInTheDocument()
+    })
+
+    it('reports partial failure when some shares fail', async () => {
+      const mutateAsync = vi
+        .fn()
+        .mockResolvedValueOnce({})
+        .mockRejectedValueOnce(new Error('boom'))
+        .mockResolvedValueOnce({})
+      vi.mocked(useCreateShare).mockReturnValue({
+        mutate: vi.fn(),
+        mutateAsync,
+        isPending: false,
+      } as unknown as ReturnType<typeof useCreateShare>)
+
+      renderModal(bulkResources)
+      const emailInput = screen.getByPlaceholderText('correo@ejemplo.com')
+      fireEvent.change(emailInput, { target: { value: 'cliente109@cliente.com' } })
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Compartir' }))
+      })
+
+      expect(
+        await screen.findByText('2 de 3 compartidos — 1 falló.'),
+      ).toBeInTheDocument()
+    })
   })
 })

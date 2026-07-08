@@ -17,6 +17,11 @@ vi.mock('../hooks/useUpdateSnippet')
 vi.mock('../hooks/useDeleteSnippet')
 vi.mock('@/features/dashboard/hooks/useDashboardSummary')
 vi.mock('@/hooks/useFeatureGate')
+vi.mock('@/features/sharing/components/ShareResourceModal', () => ({
+  ShareResourceModal: ({ resources }: { resources: { id: string; title: string }[] }) => (
+    <div data-testid="share-modal">{resources.length} recursos a compartir</div>
+  ),
+}))
 
 const mockSnippets: CodeSnippet[] = [
   {
@@ -224,5 +229,18 @@ describe('SnippetsPage', () => {
     renderSnippetsPage()
     const exportBtn = screen.getByRole('button', { name: /Exportar/i })
     expect(exportBtn).toBeDisabled()
+  })
+
+  it('permite seleccionar varios snippets y compartirlos en lote', () => {
+    renderSnippetsPage()
+
+    fireEvent.click(screen.getByText('Seleccionar'))
+    fireEvent.click(screen.getByLabelText('Seleccionar useEffect cleanup'))
+    fireEvent.click(screen.getByLabelText('Seleccionar Python hello world'))
+
+    expect(screen.getByText('2 seleccionadas')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartir' }))
+    expect(screen.getByTestId('share-modal')).toHaveTextContent('2 recursos a compartir')
   })
 })
