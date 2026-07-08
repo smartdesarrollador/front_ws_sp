@@ -34,6 +34,8 @@ export interface CalendarEvent {
   category: EventCategory
   color: string
   location: string | null
+  is_attendee: boolean
+  organizer_name: string | null
   created_at: string
   updated_at: string
 }
@@ -48,6 +50,8 @@ export interface CalendarEventApi {
   is_all_day: boolean
   color: string
   location: string | null
+  is_attendee: boolean
+  organizer_name: string | null
   created_at: string
   updated_at: string
 }

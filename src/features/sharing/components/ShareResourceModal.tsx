@@ -6,6 +6,7 @@ import { X, Trash2 } from 'lucide-react'
 import { useResourceShares } from '../hooks/useResourceShares'
 import { useCreateShare } from '../hooks/useCreateShare'
 import { useRevokeShare } from '../hooks/useRevokeShare'
+import { useTeamDirectory } from '../hooks/useTeamDirectory'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 const PERMISSION_LABELS: Record<string, string> = {
@@ -39,6 +40,7 @@ export function ShareResourceModal({ resourceType, resourceId, resourceTitle, on
   useFocusTrap(dialogRef, true)
 
   const { data: shares = [], isLoading } = useResourceShares(resourceType, resourceId)
+  const { data: teammates = [] } = useTeamDirectory()
   const createShare = useCreateShare()
   const revokeShare = useRevokeShare()
   const [inviteError, setInviteError] = useState<string | null>(null)
@@ -47,6 +49,7 @@ export function ShareResourceModal({ resourceType, resourceId, resourceTitle, on
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -64,7 +67,13 @@ export function ShareResourceModal({ resourceType, resourceId, resourceTitle, on
       },
       {
         onSuccess: () => reset(),
-        onError: () => setInviteError('No se pudo compartir. Verifica el email.'),
+        onError: (error) => {
+          if ((error as { response?: { status?: number } }).response?.status === 402) {
+            setInviteError('Para compartir necesitas un plan superior. Actualiza tu plan para desbloquear esta función.')
+          } else {
+            setInviteError('No se pudo compartir. Verifica el email.')
+          }
+        },
       },
     )
   }
@@ -109,6 +118,26 @@ export function ShareResourceModal({ resourceType, resourceId, resourceTitle, on
               <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg p-3 text-sm">
                 {inviteError}
               </div>
+            )}
+            {teammates.length > 0 && (
+              <select
+                aria-label="Elegir del equipo"
+                defaultValue=""
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setValue('email', e.target.value, { shouldValidate: true })
+                    e.target.value = ''
+                  }
+                }}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">Elegir del equipo…</option>
+                {teammates.map((member) => (
+                  <option key={member.id} value={member.email}>
+                    {member.name} ({member.email})
+                  </option>
+                ))}
+              </select>
             )}
             <div className="flex gap-2">
               <div className="flex-1">

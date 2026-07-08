@@ -21,6 +21,8 @@ export interface Note {
   category: NoteCategory
   tags: string[]
   is_pinned: boolean
+  is_shared: boolean
+  shared_by_name: string | null
   created_at: string
   updated_at: string
 }

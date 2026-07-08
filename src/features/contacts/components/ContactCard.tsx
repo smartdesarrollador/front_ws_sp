@@ -102,9 +102,22 @@ export function ContactCard({ contact, onEdit, onDelete, onShare }: Props) {
             </div>
           )}
 
-          {contact.group && (
-            <div className="mt-2">
-              <GroupBadge group={contact.group} />
+          {(contact.group || contact.is_shared) && (
+            <div className="flex items-center gap-1.5 mt-2">
+              {contact.group && <GroupBadge group={contact.group} />}
+              {contact.is_shared && (
+                <span
+                  title={
+                    contact.shared_by_name
+                      ? `Compartido por ${contact.shared_by_name}`
+                      : 'Compartido contigo'
+                  }
+                  className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300"
+                >
+                  <Share2 className="w-3 h-3" />
+                  Compartido
+                </span>
+              )}
             </div>
           )}
         </div>

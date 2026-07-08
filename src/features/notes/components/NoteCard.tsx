@@ -67,7 +67,22 @@ export function NoteCard({ note, onEdit, onDelete, onShare }: Props) {
 
       {/* Footer */}
       <div className="flex items-center justify-between gap-2">
-        <CategoryBadge category={note.category} />
+        <div className="flex items-center gap-1.5">
+          <CategoryBadge category={note.category} />
+          {note.is_shared && (
+            <span
+              title={
+                note.shared_by_name
+                  ? `Compartida por ${note.shared_by_name}`
+                  : 'Compartida contigo'
+              }
+              className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300"
+            >
+              <Share2 className="w-3 h-3" />
+              Compartida
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-400 dark:text-gray-500">
             {new Date(note.created_at).toLocaleDateString('es-ES')}

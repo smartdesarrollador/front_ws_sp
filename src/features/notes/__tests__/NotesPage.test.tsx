@@ -24,6 +24,8 @@ const mockNotes: Note[] = [
     category: 'work',
     tags: ['meeting', 'team'],
     is_pinned: true,
+    is_shared: false,
+    shared_by_name: null,
     created_at: '2026-03-01T10:00:00Z',
     updated_at: '2026-03-01T10:00:00Z',
   },
@@ -34,6 +36,8 @@ const mockNotes: Note[] = [
     category: 'personal',
     tags: [],
     is_pinned: false,
+    is_shared: false,
+    shared_by_name: null,
     created_at: '2026-03-02T10:00:00Z',
     updated_at: '2026-03-02T10:00:00Z',
   },
@@ -44,6 +48,8 @@ const mockNotes: Note[] = [
     category: 'work',
     tags: ['idea'],
     is_pinned: false,
+    is_shared: true,
+    shared_by_name: 'Otro Usuario',
     created_at: '2026-03-03T10:00:00Z',
     updated_at: '2026-03-03T10:00:00Z',
   },
@@ -122,6 +128,15 @@ describe('NotesPage', () => {
     expect(screen.getByText('Notas fijadas')).toBeInTheDocument()
     // The pinned note title should appear
     expect(screen.getByText('Meeting notes')).toBeInTheDocument()
+  })
+
+  it('muestra el badge "Compartida" solo en notas compartidas', () => {
+    renderNotesPage()
+    const badges = screen.getAllByText('Compartida')
+    expect(badges).toHaveLength(1)
+    expect(
+      screen.getByTitle('Compartida por Otro Usuario'),
+    ).toBeInTheDocument()
   })
 
   it('el botón Nueva Nota abre el NoteModal', () => {

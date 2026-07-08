@@ -4,17 +4,17 @@ import { useSharedWithMe } from './hooks/useSharedWithMe'
 import { SharedItemCard } from './components/SharedItemCard'
 import type { ShareAccessLevel } from './types'
 
-type ResourceTypeFilter = 'all' | 'project' | 'task' | 'note' | 'bookmark' | 'snippet' | 'contact'
+type ResourceTypeFilter = 'all' | 'project' | 'note' | 'snippet' | 'contact'
 type AccessLevelFilter = 'all' | ShareAccessLevel
 
+// Mantener en sync con Share.RESOURCE_TYPES (apps/backend_django/apps/sharing/models.py):
+// solo project, section, item, snippet, note y contact son compartibles.
 const RESOURCE_TYPE_OPTIONS: { value: ResourceTypeFilter; label: string }[] = [
   { value: 'all', label: 'Todos' },
   { value: 'project', label: 'Proyectos' },
   { value: 'snippet', label: 'Snippets' },
   { value: 'note', label: 'Notas' },
   { value: 'contact', label: 'Contactos' },
-  { value: 'task', label: 'Tareas' },
-  { value: 'bookmark', label: 'Bookmarks' },
 ]
 
 const ACCESS_LEVEL_PILLS: { value: AccessLevelFilter; label: string }[] = [

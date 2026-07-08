@@ -7,6 +7,10 @@ import { useCalendarEvents } from '../hooks/useCalendarEvents'
 import { useDeleteEvent } from '../hooks/useDeleteEvent'
 import { useCreateEvent } from '../hooks/useCreateEvent'
 import { useUpdateEvent } from '../hooks/useUpdateEvent'
+import { useEventAttendees } from '../hooks/useEventAttendees'
+import { useAddAttendee } from '../hooks/useAddAttendee'
+import { useRemoveAttendee } from '../hooks/useRemoveAttendee'
+import { useTeamDirectory } from '@/features/sharing/hooks/useTeamDirectory'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
 import type { CalendarEvent } from '../types'
 
@@ -14,6 +18,10 @@ vi.mock('../hooks/useCalendarEvents')
 vi.mock('../hooks/useDeleteEvent')
 vi.mock('../hooks/useCreateEvent')
 vi.mock('../hooks/useUpdateEvent')
+vi.mock('../hooks/useEventAttendees')
+vi.mock('../hooks/useAddAttendee')
+vi.mock('../hooks/useRemoveAttendee')
+vi.mock('@/features/sharing/hooks/useTeamDirectory')
 vi.mock('@/features/dashboard/hooks/useDashboardSummary')
 
 // Fechas derivadas de "hoy" para que los eventos caigan siempre en el mes
@@ -34,6 +42,8 @@ const mockEvents: CalendarEvent[] = [
     category: 'meeting',
     color: '#3b82f6',
     location: 'Sala A',
+    is_attendee: false,
+    organizer_name: null,
     created_at: `${todayYmd}T08:00:00Z`,
     updated_at: `${todayYmd}T10:00:00Z`,
   },
@@ -47,6 +57,8 @@ const mockEvents: CalendarEvent[] = [
     category: 'standup',
     color: '#8b5cf6',
     location: null,
+    is_attendee: true,
+    organizer_name: 'Otro Usuario',
     created_at: `${todayYmd}T08:00:00Z`,
     updated_at: `${todayYmd}T10:00:00Z`,
   },
@@ -55,6 +67,8 @@ const mockEvents: CalendarEvent[] = [
 const mockDeleteMutate = vi.fn()
 const mockCreateMutate = vi.fn()
 const mockUpdateMutate = vi.fn()
+const mockAddAttendeeMutate = vi.fn()
+const mockRemoveAttendeeMutate = vi.fn()
 
 function renderCalendarPage() {
   const qc = new QueryClient({
@@ -95,6 +109,26 @@ describe('CalendarPage', () => {
       isPending: false,
       error: null,
     } as unknown as ReturnType<typeof useUpdateEvent>)
+
+    vi.mocked(useEventAttendees).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useEventAttendees>)
+
+    vi.mocked(useAddAttendee).mockReturnValue({
+      mutate: mockAddAttendeeMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useAddAttendee>)
+
+    vi.mocked(useRemoveAttendee).mockReturnValue({
+      mutate: mockRemoveAttendeeMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useRemoveAttendee>)
+
+    vi.mocked(useTeamDirectory).mockReturnValue({
+      data: [{ id: 'u2', name: 'Cliente 109', email: 'cliente109@cliente.com' }],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useTeamDirectory>)
 
     vi.mocked(useDashboardSummary).mockReturnValue({
       data: {
@@ -236,5 +270,46 @@ describe('CalendarPage', () => {
     renderCalendarPage()
     expect(screen.getAllByText(/Sprint Planning/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/Daily Standup/).length).toBeGreaterThan(0)
+  })
+
+  it('marca el evento donde soy invitado y no abre el modal al hacer click', () => {
+    renderCalendarPage()
+    expect(screen.getByLabelText('Invitado')).toBeInTheDocument()
+
+    const invited = screen.getByText(/Daily Standup/)
+    fireEvent.click(invited)
+    expect(screen.queryByText('Editar Evento')).not.toBeInTheDocument()
+  })
+
+  it('muestra el badge "Invitado" con el organizador en la vista Día', () => {
+    renderCalendarPage()
+    fireEvent.click(screen.getByText('Día'))
+    expect(screen.getByTitle('Invitado por Otro Usuario')).toBeInTheDocument()
+  })
+
+  it('permite invitar a un compañero del equipo desde el modal de edición', () => {
+    renderCalendarPage()
+    fireEvent.click(screen.getAllByText(/Sprint Planning/)[0])
+    expect(screen.getByText('Editar Evento')).toBeInTheDocument()
+
+    const select = screen.getByLabelText('Invitar asistente')
+    fireEvent.change(select, { target: { value: 'u2' } })
+
+    expect(mockAddAttendeeMutate).toHaveBeenCalledWith({ eventId: 'e1', userId: 'u2' })
+  })
+
+  it('muestra a los asistentes ya invitados con opción de quitarlos', () => {
+    vi.mocked(useEventAttendees).mockReturnValue({
+      data: [{ id: 'att1', user_id: 'u2', user_name: 'Cliente 109', status: 'accepted' }],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useEventAttendees>)
+
+    renderCalendarPage()
+    fireEvent.click(screen.getAllByText(/Sprint Planning/)[0])
+    expect(screen.getByText('Cliente 109')).toBeInTheDocument()
+    expect(screen.getByText('Aceptó')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByLabelText('Quitar a Cliente 109'))
+    expect(mockRemoveAttendeeMutate).toHaveBeenCalledWith({ eventId: 'e1', userId: 'u2' })
   })
 })

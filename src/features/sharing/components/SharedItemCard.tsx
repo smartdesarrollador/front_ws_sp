@@ -1,23 +1,21 @@
 import { useNavigate } from 'react-router-dom'
-import { Folder, CheckSquare, FileText, Bookmark, File, Code2, Users } from 'lucide-react'
+import { Folder, FileText, File, Code2, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { SharedItem } from '../types'
 import { AccessLevelBadge } from './AccessLevelBadge'
 
+// Mantener en sync con Share.RESOURCE_TYPES (apps/backend_django/apps/sharing/models.py):
+// solo project, section, item, snippet, note y contact son compartibles.
 const RESOURCE_ICONS: Record<string, LucideIcon> = {
   project: Folder,
-  task: CheckSquare,
   note: FileText,
-  bookmark: Bookmark,
   snippet: Code2,
   contact: Users,
 }
 
 const RESOURCE_ROUTES: Record<string, string> = {
   project: '/projects',
-  task: '/tasks',
   note: '/notes',
-  bookmark: '/bookmarks',
   snippet: '/snippets',
   contact: '/contacts',
 }

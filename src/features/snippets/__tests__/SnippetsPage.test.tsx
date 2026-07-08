@@ -28,6 +28,8 @@ const mockSnippets: CodeSnippet[] = [
     tags: ['react', 'hooks'],
     is_favorite: true,
     usage_count: 5,
+    is_shared: false,
+    shared_by_name: null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
   },
@@ -40,6 +42,8 @@ const mockSnippets: CodeSnippet[] = [
     tags: ['python', 'basics'],
     is_favorite: false,
     usage_count: 1,
+    is_shared: true,
+    shared_by_name: 'Otro Usuario',
     created_at: '2026-01-02',
     updated_at: '2026-01-02',
   },
@@ -132,6 +136,12 @@ describe('SnippetsPage', () => {
     renderSnippetsPage()
     expect(screen.getByText('useEffect cleanup')).toBeInTheDocument()
     expect(screen.getByText('Python hello world')).toBeInTheDocument()
+  })
+
+  it('muestra el badge "Compartido" solo en snippets compartidos', () => {
+    renderSnippetsPage()
+    expect(screen.getAllByText('Compartido')).toHaveLength(1)
+    expect(screen.getByTitle('Compartido por Otro Usuario')).toBeInTheDocument()
   })
 
   it('el botón Nuevo Snippet abre el SnippetModal', () => {

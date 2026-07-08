@@ -14,6 +14,8 @@ export interface Contact {
   job_title?: string
   group: ContactGroup | null
   notes?: string
+  is_shared: boolean
+  shared_by_name: string | null
   created_at: string
   updated_at: string
 }

@@ -35,6 +35,8 @@ const mockContacts: Contact[] = [
     job_title: 'Directora',
     group: mockGroups[0],
     notes: 'Contacto principal',
+    is_shared: false,
+    shared_by_name: null,
     created_at: '2026-03-01T10:00:00Z',
     updated_at: '2026-03-01T10:00:00Z',
   },
@@ -45,6 +47,8 @@ const mockContacts: Contact[] = [
     company: 'Proveedor SL',
     job_title: 'Comercial',
     group: mockGroups[1],
+    is_shared: true,
+    shared_by_name: 'Otro Usuario',
     created_at: '2026-03-02T10:00:00Z',
     updated_at: '2026-03-02T10:00:00Z',
   },
@@ -138,6 +142,12 @@ describe('ContactsPage', () => {
     renderContactsPage()
     expect(screen.getByText('Ana García')).toBeInTheDocument()
     expect(screen.getByText('Carlos Ruiz')).toBeInTheDocument()
+  })
+
+  it('muestra el badge "Compartido" solo en contactos compartidos', () => {
+    renderContactsPage()
+    expect(screen.getAllByText('Compartido')).toHaveLength(1)
+    expect(screen.getByTitle('Compartido por Otro Usuario')).toBeInTheDocument()
   })
 
   it('el botón Nuevo Contacto abre el ContactModal', () => {

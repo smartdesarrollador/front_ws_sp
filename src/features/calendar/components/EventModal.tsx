@@ -2,14 +2,25 @@ import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { X } from 'lucide-react'
+import { X, UserX } from 'lucide-react'
 import { useCreateEvent } from '../hooks/useCreateEvent'
 import { useUpdateEvent } from '../hooks/useUpdateEvent'
+import { useEventAttendees, type AttendeeStatus } from '../hooks/useEventAttendees'
+import { useAddAttendee } from '../hooks/useAddAttendee'
+import { useRemoveAttendee } from '../hooks/useRemoveAttendee'
+import { useTeamDirectory } from '@/features/sharing/hooks/useTeamDirectory'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { CalendarEvent, CreateEventRequest, EventCategory } from '../types'
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '../types'
 
 const CATEGORIES: EventCategory[] = ['meeting', 'standup', 'client', 'review', 'personal']
+
+const ATTENDEE_STATUS_LABELS: Record<AttendeeStatus, string> = {
+  invited: 'Invitado',
+  accepted: 'Aceptó',
+  declined: 'Rechazó',
+  maybe: 'Tal vez',
+}
 
 const schema = z
   .object({
@@ -46,6 +57,10 @@ export function EventModal({ event, open, onClose, defaultDate }: Props) {
   useFocusTrap(dialogRef, open)
   const createEvent = useCreateEvent()
   const updateEvent = useUpdateEvent()
+  const { data: attendees = [] } = useEventAttendees(event?.id)
+  const { data: teammates = [] } = useTeamDirectory()
+  const addAttendee = useAddAttendee()
+  const removeAttendee = useRemoveAttendee()
 
   const {
     register,
@@ -286,6 +301,68 @@ export function EventModal({ event, open, onClose, defaultDate }: Props) {
               className={inputClass}
             />
           </div>
+
+          {/* Attendees — only available once the event exists */}
+          {event && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Asistentes
+              </label>
+
+              {attendees.length > 0 && (
+                <div className="space-y-1.5 mb-2">
+                  {attendees.map((attendee) => (
+                    <div
+                      key={attendee.id}
+                      className="flex items-center justify-between gap-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-1.5"
+                    >
+                      <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                        {attendee.user_name}
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-gray-600 dark:text-gray-300">
+                          {ATTENDEE_STATUS_LABELS[attendee.status]}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeAttendee.mutate({ eventId: event.id, userId: attendee.user_id })
+                          }
+                          aria-label={`Quitar a ${attendee.user_name}`}
+                          className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded"
+                        >
+                          <UserX className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {teammates.filter((m) => !attendees.some((a) => a.user_id === m.id)).length > 0 && (
+                <select
+                  aria-label="Invitar asistente"
+                  defaultValue=""
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      addAttendee.mutate({ eventId: event.id, userId: e.target.value })
+                      e.target.value = ''
+                    }
+                  }}
+                  className={inputClass}
+                >
+                  <option value="">Invitar del equipo…</option>
+                  {teammates
+                    .filter((m) => !attendees.some((a) => a.user_id === m.id))
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.email})
+                      </option>
+                    ))}
+                </select>
+              )}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2">

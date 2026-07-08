@@ -12,6 +12,8 @@ export interface CodeSnippet {
   tags: string[]
   is_favorite: boolean
   usage_count?: number
+  is_shared: boolean
+  shared_by_name: string | null
   created_at: string
   updated_at: string
 }

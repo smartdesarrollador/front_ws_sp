@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Trash2, MapPin } from 'lucide-react'
+import { Pencil, Trash2, MapPin, Users } from 'lucide-react'
 import type { CalendarEvent } from '../types'
 import { CATEGORY_LABELS } from '../types'
 
@@ -32,42 +32,54 @@ export function EventCard({ event, compact = false, onEdit, onDelete }: Props) {
   const startTime = formatTime(event.start_date)
   const endTime = formatTime(event.end_date)
 
+  const title = event.is_attendee
+    ? `${event.title} (Invitado por ${event.organizer_name})`
+    : event.title
+
   if (compact) {
     return (
       <div
-        className="group relative text-xs px-1.5 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity"
+        className={`group relative text-xs px-1.5 py-0.5 rounded truncate transition-opacity ${
+          event.is_attendee ? '' : 'cursor-pointer hover:opacity-80'
+        }`}
         style={{ backgroundColor: event.color + '20', color: event.color, borderLeft: `3px solid ${event.color}` }}
-        onClick={(e) => { e.stopPropagation(); onEdit(event) }}
-        title={event.title}
+        onClick={event.is_attendee ? undefined : (e) => { e.stopPropagation(); onEdit(event) }}
+        title={title}
       >
         <span className="font-medium">
           {startTime && `${startTime} `}{event.title}
         </span>
-        <div className="absolute right-1 top-0 bottom-0 hidden group-hover:flex items-center gap-0.5 bg-inherit">
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit(event) }}
-            aria-label="Editar evento"
-            className="p-0.5 hover:opacity-70"
-          >
-            <Pencil className="w-2.5 h-2.5" />
-          </button>
-          <button
-            onClick={handleDeleteClick}
-            aria-label={confirming ? 'Confirmar eliminación' : 'Eliminar evento'}
-            className="p-0.5 hover:opacity-70"
-          >
-            <Trash2 className="w-2.5 h-2.5" />
-          </button>
-        </div>
+        {event.is_attendee ? (
+          <Users className="inline-block w-2.5 h-2.5 ml-1 align-text-top" aria-label="Invitado" />
+        ) : (
+          <div className="absolute right-1 top-0 bottom-0 hidden group-hover:flex items-center gap-0.5 bg-inherit">
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(event) }}
+              aria-label="Editar evento"
+              className="p-0.5 hover:opacity-70"
+            >
+              <Pencil className="w-2.5 h-2.5" />
+            </button>
+            <button
+              onClick={handleDeleteClick}
+              aria-label={confirming ? 'Confirmar eliminación' : 'Eliminar evento'}
+              className="p-0.5 hover:opacity-70"
+            >
+              <Trash2 className="w-2.5 h-2.5" />
+            </button>
+          </div>
+        )}
       </div>
     )
   }
 
   return (
     <div
-      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 shadow-sm hover:shadow-md transition-shadow ${
+        event.is_attendee ? '' : 'cursor-pointer'
+      }`}
       style={{ borderLeft: `4px solid ${event.color}` }}
-      onClick={() => onEdit(event)}
+      onClick={event.is_attendee ? undefined : () => onEdit(event)}
     >
       <div className="flex items-start justify-between gap-2 mb-1">
         <div className="flex-1 min-w-0">
@@ -83,26 +95,28 @@ export function EventCard({ event, compact = false, onEdit, onDelete }: Props) {
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Todo el día</p>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={() => onEdit(event)}
-            aria-label="Editar evento"
-            className="p-1 text-gray-400 hover:text-primary-600 rounded"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={handleDeleteClick}
-            aria-label={confirming ? 'Confirmar eliminación' : 'Eliminar evento'}
-            className={`p-1 rounded ${
-              confirming
-                ? 'text-red-600 bg-red-50 dark:bg-red-900/20'
-                : 'text-gray-400 hover:text-red-600'
-            }`}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        {!event.is_attendee && (
+          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => onEdit(event)}
+              aria-label="Editar evento"
+              className="p-1 text-gray-400 hover:text-primary-600 rounded"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleDeleteClick}
+              aria-label={confirming ? 'Confirmar eliminación' : 'Eliminar evento'}
+              className={`p-1 rounded ${
+                confirming
+                  ? 'text-red-600 bg-red-50 dark:bg-red-900/20'
+                  : 'text-gray-400 hover:text-red-600'
+              }`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {event.location && (
@@ -112,13 +126,26 @@ export function EventCard({ event, compact = false, onEdit, onDelete }: Props) {
         </div>
       )}
 
-      <div className="mt-2">
+      <div className="mt-2 flex items-center gap-1.5">
         <span
           className="inline-block text-xs px-2 py-0.5 rounded-full font-medium"
           style={{ backgroundColor: event.color + '20', color: event.color }}
         >
           {CATEGORY_LABELS[event.category] ?? event.category}
         </span>
+        {event.is_attendee && (
+          <span
+            title={
+              event.organizer_name
+                ? `Invitado por ${event.organizer_name}`
+                : 'Invitado a este evento'
+            }
+            className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300"
+          >
+            <Users className="w-3 h-3" />
+            Invitado
+          </span>
+        )}
       </div>
     </div>
   )

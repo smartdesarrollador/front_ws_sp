@@ -32,10 +32,23 @@ export function SnippetCard({ snippet, onEdit, onDelete, onShare }: Props) {
     <div className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <LanguageBadge language={snippet.language} />
           {snippet.is_favorite && (
             <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+          )}
+          {snippet.is_shared && (
+            <span
+              title={
+                snippet.shared_by_name
+                  ? `Compartido por ${snippet.shared_by_name}`
+                  : 'Compartido contigo'
+              }
+              className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300"
+            >
+              <Share2 className="w-3 h-3" />
+              Compartido
+            </span>
           )}
         </div>
 

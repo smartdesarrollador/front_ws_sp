@@ -24,8 +24,8 @@ const mockItems: SharedItem[] = [
   },
   {
     id: 'sh-2',
-    resource_type: 'task',
-    resource_id: 'task-1',
+    resource_type: 'note',
+    resource_id: 'note-1',
     resource_name: 'Revisar PR #42',
     shared_by_name: 'Ana López',
     shared_by_email: 'ana@example.com',
@@ -81,7 +81,7 @@ describe('SharedWithMePage', () => {
   it('filters by resource_type select', () => {
     renderPage()
     const select = screen.getByRole('combobox', { name: /tipo de recurso/i })
-    fireEvent.change(select, { target: { value: 'task' } })
+    fireEvent.change(select, { target: { value: 'note' } })
     expect(screen.queryByText('Proyecto Alpha')).not.toBeInTheDocument()
     expect(screen.getByText('Revisar PR #42')).toBeInTheDocument()
   })
