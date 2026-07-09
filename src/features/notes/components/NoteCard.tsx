@@ -80,24 +80,23 @@ export function NoteCard({
         {note.content}
       </p>
 
-      {/* Tags */}
-      {note.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-3">
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <CategoryBadge category={note.category} />
           {note.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded"
+              className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full"
             >
               #{tag}
             </span>
           ))}
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <CategoryBadge category={note.category} />
+          {note.tags.length > 3 && (
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              +{note.tags.length - 3}
+            </span>
+          )}
           {note.is_shared && (
             <span
               title={

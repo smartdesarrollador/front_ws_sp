@@ -1,18 +1,20 @@
 import { useEffect, useRef } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X, Pin } from 'lucide-react'
 import { useCreateNote } from '../hooks/useCreateNote'
 import { useUpdateNote } from '../hooks/useUpdateNote'
+import { useNoteTagSuggestions } from '../hooks/useNoteTagSuggestions'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { TagInput } from './TagInput'
 import type { Note, NoteCategory } from '../types'
 
 const schema = z.object({
   title: z.string().min(1, 'El título es requerido').max(200, 'Máximo 200 caracteres'),
   content: z.string().min(1, 'El contenido es requerido').max(10000, 'Máximo 10000 caracteres'),
   category: z.enum(['work', 'personal', 'ideas', 'archive'] as const),
-  tags: z.string().optional(),
+  tags: z.array(z.string()),
   is_pinned: z.boolean().optional(),
 })
 
@@ -29,11 +31,13 @@ export function NoteModal({ note, open, onClose }: Props) {
   useFocusTrap(dialogRef, open)
   const createNote = useCreateNote()
   const updateNote = useUpdateNote()
+  const { data: tagSuggestions } = useNoteTagSuggestions()
 
   const {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -41,7 +45,7 @@ export function NoteModal({ note, open, onClose }: Props) {
       title: '',
       content: '',
       category: 'work',
-      tags: '',
+      tags: [],
       is_pinned: false,
     },
   })
@@ -54,14 +58,14 @@ export function NoteModal({ note, open, onClose }: Props) {
               title: note.title,
               content: note.content,
               category: note.category,
-              tags: note.tags.join(', '),
+              tags: note.tags,
               is_pinned: note.is_pinned,
             }
           : {
               title: '',
               content: '',
               category: 'work',
-              tags: '',
+              tags: [],
               is_pinned: false,
             },
       )
@@ -69,15 +73,11 @@ export function NoteModal({ note, open, onClose }: Props) {
   }, [open, note, reset])
 
   const onSubmit = (data: FormData) => {
-    const tags = data.tags
-      ? data.tags.split(',').map((t) => t.trim()).filter(Boolean)
-      : []
-
     const payload = {
       title: data.title,
       content: data.content,
       category: data.category as NoteCategory,
-      tags,
+      tags: data.tags,
       is_pinned: data.is_pinned ?? false,
     }
 
@@ -186,10 +186,17 @@ export function NoteModal({ note, open, onClose }: Props) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Etiquetas
               </label>
-              <input
-                {...register('tags')}
-                placeholder="tag1, tag2, tag3"
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              <Controller
+                name="tags"
+                control={control}
+                render={({ field }) => (
+                  <TagInput
+                    value={field.value ?? []}
+                    onChange={field.onChange}
+                    suggestions={tagSuggestions ?? []}
+                    placeholder="Escribir etiqueta..."
+                  />
+                )}
               />
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useNotes } from './hooks/useNotes'
 import { useDeleteNote } from './hooks/useDeleteNote'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
 import { useImportNotes } from './hooks/useImportNotes'
+import { useNoteTagSuggestions } from './hooks/useNoteTagSuggestions'
 import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
 import ImportButton from '@/components/shared/ImportButton'
 import ImportModal from '@/components/shared/ImportModal'
@@ -17,7 +18,7 @@ import { useBulkSelection } from '@/features/sharing/hooks/useBulkSelection'
 import { BulkActionBar } from '@/features/sharing/components/BulkActionBar'
 import type { Note, NoteFiltersState } from './types'
 
-const EMPTY_FILTERS: NoteFiltersState = { search: '', category: '', pinned_only: false }
+const EMPTY_FILTERS: NoteFiltersState = { search: '', category: '', pinned_only: false, tag: '' }
 
 export default function NotesPage() {
   const [modalOpen, setModalOpen] = useState(false)
@@ -31,6 +32,7 @@ export default function NotesPage() {
   const deleteNote = useDeleteNote()
   const importNotes = useImportNotes()
   const { data: summaryData } = useDashboardSummary()
+  const { data: tagSuggestions } = useNoteTagSuggestions()
 
   const allNotes = data?.notes ?? []
   const total = data?.total ?? 0
@@ -45,6 +47,7 @@ export default function NotesPage() {
     }
     if (filters.category && note.category !== filters.category) return false
     if (filters.pinned_only && !note.is_pinned) return false
+    if (filters.tag && !note.tags.includes(filters.tag)) return false
     return true
   })
 
@@ -187,7 +190,12 @@ export default function NotesPage() {
 
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <NoteFilters filters={filters} onChange={setFilters} totalCount={total} />
+        <NoteFilters
+          filters={filters}
+          onChange={setFilters}
+          totalCount={total}
+          tags={tagSuggestions ?? []}
+        />
       </div>
 
       {/* Bulk selection toolbar */}

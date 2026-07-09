@@ -8,6 +8,8 @@ import { useContactGroups } from '../hooks/useContactGroups'
 import { useCreateContact } from '../hooks/useCreateContact'
 import { useUpdateContact } from '../hooks/useUpdateContact'
 import { useDeleteContact } from '../hooks/useDeleteContact'
+import { useCreateContactGroup } from '../hooks/useCreateContactGroup'
+import { useDeleteContactGroup } from '../hooks/useDeleteContactGroup'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
 import { useFeatureGate } from '@/hooks/useFeatureGate'
 import type { Contact, ContactGroup } from '../types'
@@ -17,6 +19,8 @@ vi.mock('../hooks/useContactGroups')
 vi.mock('../hooks/useCreateContact')
 vi.mock('../hooks/useUpdateContact')
 vi.mock('../hooks/useDeleteContact')
+vi.mock('../hooks/useCreateContactGroup')
+vi.mock('../hooks/useDeleteContactGroup')
 vi.mock('@/features/dashboard/hooks/useDashboardSummary')
 vi.mock('@/hooks/useFeatureGate')
 vi.mock('@/features/sharing/components/ShareResourceModal', () => ({
@@ -136,6 +140,16 @@ describe('ContactsPage', () => {
       plan: 'professional',
       isLoading: false,
     })
+
+    vi.mocked(useCreateContactGroup).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useCreateContactGroup>)
+
+    vi.mocked(useDeleteContactGroup).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useDeleteContactGroup>)
   })
 
   it('renderiza el título de la página', () => {
@@ -160,6 +174,13 @@ describe('ContactsPage', () => {
     fireEvent.click(screen.getByText('Nuevo Contacto'))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(screen.getByText('Nuevo contacto')).toBeInTheDocument()
+  })
+
+  it('el botón Gestionar grupos abre el ManageGroupsModal', () => {
+    renderContactsPage()
+    fireEvent.click(screen.getByText('Gestionar grupos'))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('Gestionar grupos', { selector: 'h2' })).toBeInTheDocument()
   })
 
   it('click en Editar abre el modal con datos', () => {

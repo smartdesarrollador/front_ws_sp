@@ -3,6 +3,7 @@ import { Plus, Code2, CheckSquare } from 'lucide-react'
 import { useSnippets } from './hooks/useSnippets'
 import { useDeleteSnippet } from './hooks/useDeleteSnippet'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
+import { useSnippetTagSuggestions } from './hooks/useSnippetTagSuggestions'
 import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
 import { toJSON, toCodeZip, downloadBlob } from '@/lib/export'
 import { SnippetFilters, EMPTY_FILTERS } from './components/SnippetFilters'
@@ -23,6 +24,7 @@ export default function SnippetsPage() {
   const { data, isLoading } = useSnippets(filters)
   const deleteSnippet = useDeleteSnippet()
   const { data: summaryData } = useDashboardSummary()
+  const { data: tagSuggestions } = useSnippetTagSuggestions()
 
   const allSnippets = data?.snippets ?? []
   const total = data?.total ?? 0
@@ -136,6 +138,7 @@ export default function SnippetsPage() {
           filters={filters}
           onChange={setFilters}
           totalCount={total}
+          tags={tagSuggestions ?? []}
         />
       </div>
 

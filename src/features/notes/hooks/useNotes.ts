@@ -15,6 +15,7 @@ export function useNotes(filters: NoteFiltersState) {
       if (filters.search) params.search = filters.search
       if (filters.category) params.category = filters.category
       if (filters.pinned_only) params.pinned_only = true
+      if (filters.tag) params.tag = filters.tag
       const { data } = await apiClient.get<NotesResponse>('/app/notes/', { params })
       return data
     },

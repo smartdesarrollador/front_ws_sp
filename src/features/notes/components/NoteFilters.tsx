@@ -5,6 +5,7 @@ interface Props {
   filters: NoteFiltersState
   onChange: (f: NoteFiltersState) => void
   totalCount: number
+  tags: string[]
 }
 
 const CATEGORY_OPTIONS: { value: NoteCategory | ''; label: string }[] = [
@@ -15,7 +16,7 @@ const CATEGORY_OPTIONS: { value: NoteCategory | ''; label: string }[] = [
   { value: 'archive', label: 'Archivo' },
 ]
 
-export function NoteFilters({ filters, onChange, totalCount }: Props) {
+export function NoteFilters({ filters, onChange, totalCount, tags }: Props) {
   return (
     <div className="flex flex-wrap gap-3 items-center">
       <div className="relative flex-1 min-w-[200px]">
@@ -37,6 +38,19 @@ export function NoteFilters({ filters, onChange, totalCount }: Props) {
         {CATEGORY_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
+          </option>
+        ))}
+      </select>
+      <select
+        value={filters.tag}
+        onChange={(e) => onChange({ ...filters, tag: e.target.value })}
+        aria-label="Filtrar por etiqueta"
+        className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+      >
+        <option value="">Todas las etiquetas</option>
+        {tags.map((t) => (
+          <option key={t} value={t}>
+            {t}
           </option>
         ))}
       </select>

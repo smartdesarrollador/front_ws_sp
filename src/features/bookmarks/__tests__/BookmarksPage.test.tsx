@@ -10,6 +10,7 @@ import { useUpdateBookmark } from '../hooks/useUpdateBookmark'
 import { useDeleteBookmark } from '../hooks/useDeleteBookmark'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
 import { useFeatureGate } from '@/hooks/useFeatureGate'
+import { useBookmarkTagSuggestions } from '../hooks/useBookmarkTagSuggestions'
 import type { Bookmark, BookmarkCollection } from '../types'
 
 vi.mock('../hooks/useBookmarks')
@@ -19,6 +20,7 @@ vi.mock('../hooks/useUpdateBookmark')
 vi.mock('../hooks/useDeleteBookmark')
 vi.mock('@/features/dashboard/hooks/useDashboardSummary')
 vi.mock('@/hooks/useFeatureGate')
+vi.mock('../hooks/useBookmarkTagSuggestions')
 
 const mockCollections: BookmarkCollection[] = [
   { id: 'c1', name: 'Dev', color: '#3B82F6', bookmarks_count: 2 },
@@ -131,6 +133,11 @@ describe('BookmarksPage', () => {
       plan: 'professional',
       isLoading: false,
     })
+
+    vi.mocked(useBookmarkTagSuggestions).mockReturnValue({
+      data: ['react', 'docs', 'vite', 'build'],
+      isLoading: false,
+    } as ReturnType<typeof useBookmarkTagSuggestions>)
   })
 
   it('renderiza el título de la página', () => {
@@ -171,6 +178,14 @@ describe('BookmarksPage', () => {
     renderBookmarksPage()
     const searchInput = screen.getByPlaceholderText('Buscar bookmarks...')
     fireEvent.change(searchInput, { target: { value: 'vitejs' } })
+    expect(screen.getByText('Vite Guide')).toBeInTheDocument()
+    expect(screen.queryByText('React Docs')).not.toBeInTheDocument()
+  })
+
+  it('filtra bookmarks por etiqueta', () => {
+    renderBookmarksPage()
+    const select = screen.getByLabelText('Filtrar por etiqueta')
+    fireEvent.change(select, { target: { value: 'vite' } })
     expect(screen.getByText('Vite Guide')).toBeInTheDocument()
     expect(screen.queryByText('React Docs')).not.toBeInTheDocument()
   })

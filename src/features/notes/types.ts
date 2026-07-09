@@ -31,6 +31,7 @@ export interface NoteFiltersState {
   search: string
   category: NoteCategory | ''
   pinned_only: boolean
+  tag: string
 }
 
 export interface CreateNoteRequest {

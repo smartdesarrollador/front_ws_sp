@@ -8,11 +8,13 @@ import { useImportContacts } from './hooks/useImportContacts'
 import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
 import ImportButton from '@/components/shared/ImportButton'
 import ImportModal from '@/components/shared/ImportModal'
+import FeatureGate from '@/components/shared/FeatureGate'
 import { toCSV, toVCard, downloadBlob } from '@/lib/export'
 import { parseContacts } from '@/lib/import'
 import { ContactFilters, EMPTY_FILTERS } from './components/ContactFilters'
 import { ContactCard } from './components/ContactCard'
 import { ContactModal } from './components/ContactModal'
+import { ManageGroupsModal } from './components/ManageGroupsModal'
 import { ShareResourceModal } from '@/features/sharing/components/ShareResourceModal'
 import { useBulkSelection } from '@/features/sharing/hooks/useBulkSelection'
 import { BulkActionBar } from '@/features/sharing/components/BulkActionBar'
@@ -20,6 +22,7 @@ import type { Contact, ContactFiltersState } from './types'
 
 export default function ContactsPage() {
   const [showModal, setShowModal] = useState(false)
+  const [showGroupsModal, setShowGroupsModal] = useState(false)
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null)
   const [shareResources, setShareResources] = useState<{ id: string; title: string }[] | null>(null)
   const [filters, setFilters] = useState<ContactFiltersState>(EMPTY_FILTERS)
@@ -162,6 +165,28 @@ export default function ContactsPage() {
             disabledHint="Actualiza tu plan para exportar contactos"
           />
 
+          <FeatureGate
+            feature="contact_groups"
+            fallback={
+              <button
+                disabled
+                title="Actualiza tu plan para gestionar grupos"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
+              >
+                <Users className="w-4 h-4" />
+                Gestionar grupos
+              </button>
+            }
+          >
+            <button
+              onClick={() => setShowGroupsModal(true)}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <Users className="w-4 h-4" />
+              Gestionar grupos
+            </button>
+          </FeatureGate>
+
           <button
             onClick={() => {
               setContactToEdit(null)
@@ -248,6 +273,7 @@ export default function ContactsPage() {
 
       {/* Modals */}
       {showModal && <ContactModal contact={contactToEdit} onClose={handleCloseModal} />}
+      {showGroupsModal && <ManageGroupsModal onClose={() => setShowGroupsModal(false)} />}
       {shareResources && (
         <ShareResourceModal
           resourceType="contact"

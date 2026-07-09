@@ -8,6 +8,7 @@ import { useCreateNote } from '../hooks/useCreateNote'
 import { useUpdateNote } from '../hooks/useUpdateNote'
 import { useDeleteNote } from '../hooks/useDeleteNote'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
+import { useNoteTagSuggestions } from '../hooks/useNoteTagSuggestions'
 import type { Note } from '../types'
 
 vi.mock('../hooks/useNotes')
@@ -15,6 +16,7 @@ vi.mock('../hooks/useCreateNote')
 vi.mock('../hooks/useUpdateNote')
 vi.mock('../hooks/useDeleteNote')
 vi.mock('@/features/dashboard/hooks/useDashboardSummary')
+vi.mock('../hooks/useNoteTagSuggestions')
 vi.mock('@/features/sharing/components/ShareResourceModal', () => ({
   ShareResourceModal: ({ resources }: { resources: { id: string; title: string }[] }) => (
     <div data-testid="share-modal">{resources.length} recursos a compartir</div>
@@ -121,6 +123,11 @@ describe('NotesPage', () => {
       },
       isLoading: false,
     })
+
+    vi.mocked(useNoteTagSuggestions).mockReturnValue({
+      data: ['meeting', 'team', 'idea'],
+      isLoading: false,
+    } as ReturnType<typeof useNoteTagSuggestions>)
   })
 
   it('renderiza el título de la página', () => {
@@ -166,6 +173,14 @@ describe('NotesPage', () => {
     // Only the personal note should be shown (Grocery list)
     expect(screen.getByText('Grocery list')).toBeInTheDocument()
     expect(screen.queryByText('Project idea')).not.toBeInTheDocument()
+  })
+
+  it('filtra notas por etiqueta', () => {
+    renderNotesPage()
+    const select = screen.getByLabelText('Filtrar por etiqueta')
+    fireEvent.change(select, { target: { value: 'idea' } })
+    expect(screen.getByText('Project idea')).toBeInTheDocument()
+    expect(screen.queryByText('Grocery list')).not.toBeInTheDocument()
   })
 
   it('filtra notas por búsqueda en título', () => {

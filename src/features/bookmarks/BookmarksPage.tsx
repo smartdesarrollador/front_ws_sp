@@ -5,6 +5,7 @@ import { useCollections } from './hooks/useCollections'
 import { useDeleteBookmark } from './hooks/useDeleteBookmark'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
 import { useImportBookmarks } from './hooks/useImportBookmarks'
+import { useBookmarkTagSuggestions } from './hooks/useBookmarkTagSuggestions'
 import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
 import ImportButton from '@/components/shared/ImportButton'
 import ImportModal from '@/components/shared/ImportModal'
@@ -25,6 +26,7 @@ export default function BookmarksPage() {
   const deleteBookmark = useDeleteBookmark()
   const importBookmarks = useImportBookmarks()
   const { data: summaryData } = useDashboardSummary()
+  const { data: tagSuggestions } = useBookmarkTagSuggestions()
 
   const allBookmarks = data?.bookmarks ?? []
   const total = data?.total ?? 0
@@ -168,6 +170,7 @@ export default function BookmarksPage() {
           onChange={setFilters}
           totalCount={total}
           collections={collections}
+          tags={tagSuggestions ?? []}
         />
       </div>
 

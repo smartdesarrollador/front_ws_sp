@@ -8,9 +8,10 @@ interface Props {
   filters: SnippetFiltersState
   onChange: (f: SnippetFiltersState) => void
   totalCount: number
+  tags: string[]
 }
 
-export function SnippetFilters({ filters, onChange, totalCount }: Props) {
+export function SnippetFilters({ filters, onChange, totalCount, tags }: Props) {
   const isActive = filters.search !== '' || filters.language !== '' || filters.tag !== ''
 
   return (
@@ -35,6 +36,19 @@ export function SnippetFilters({ filters, onChange, totalCount }: Props) {
         {(Object.keys(LANG_CONFIG) as Array<keyof typeof LANG_CONFIG>).map((lang) => (
           <option key={lang} value={lang}>
             {LANG_CONFIG[lang].label}
+          </option>
+        ))}
+      </select>
+      <select
+        value={filters.tag}
+        onChange={(e) => onChange({ ...filters, tag: e.target.value })}
+        aria-label="Filtrar por etiqueta"
+        className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+      >
+        <option value="">Todas las etiquetas</option>
+        {tags.map((t) => (
+          <option key={t} value={t}>
+            {t}
           </option>
         ))}
       </select>

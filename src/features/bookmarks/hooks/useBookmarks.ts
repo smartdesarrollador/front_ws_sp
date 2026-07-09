@@ -13,7 +13,7 @@ export function useBookmarks(filters: BookmarkFiltersState) {
     queryFn: async () => {
       const params: Record<string, string> = {}
       if (filters.search) params.search = filters.search
-      if (filters.collection_id) params.collection_id = filters.collection_id
+      if (filters.collection_id) params.collection = filters.collection_id
       if (filters.tag) params.tag = filters.tag
       const { data } = await apiClient.get<BookmarksResponse>('/app/bookmarks/', { params })
       return data

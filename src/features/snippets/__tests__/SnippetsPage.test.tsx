@@ -9,6 +9,7 @@ import { useUpdateSnippet } from '../hooks/useUpdateSnippet'
 import { useDeleteSnippet } from '../hooks/useDeleteSnippet'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
 import { useFeatureGate } from '@/hooks/useFeatureGate'
+import { useSnippetTagSuggestions } from '../hooks/useSnippetTagSuggestions'
 import type { CodeSnippet } from '../types'
 
 vi.mock('../hooks/useSnippets')
@@ -17,6 +18,7 @@ vi.mock('../hooks/useUpdateSnippet')
 vi.mock('../hooks/useDeleteSnippet')
 vi.mock('@/features/dashboard/hooks/useDashboardSummary')
 vi.mock('@/hooks/useFeatureGate')
+vi.mock('../hooks/useSnippetTagSuggestions')
 vi.mock('@/features/sharing/components/ShareResourceModal', () => ({
   ShareResourceModal: ({ resources }: { resources: { id: string; title: string }[] }) => (
     <div data-testid="share-modal">{resources.length} recursos a compartir</div>
@@ -130,6 +132,11 @@ describe('SnippetsPage', () => {
       plan: 'professional',
       isLoading: false,
     })
+
+    vi.mocked(useSnippetTagSuggestions).mockReturnValue({
+      data: ['react', 'hooks', 'python', 'basics'],
+      isLoading: false,
+    } as ReturnType<typeof useSnippetTagSuggestions>)
   })
 
   it('renderiza el título de la página', () => {
@@ -178,6 +185,14 @@ describe('SnippetsPage', () => {
     fireEvent.change(searchInput, { target: { value: 'Hello, World' } })
     expect(screen.getByText('Python hello world')).toBeInTheDocument()
     expect(screen.queryByText('useEffect cleanup')).not.toBeInTheDocument()
+  })
+
+  it('filtra snippets por etiqueta', () => {
+    renderSnippetsPage()
+    const select = screen.getByLabelText('Filtrar por etiqueta')
+    fireEvent.change(select, { target: { value: 'react' } })
+    expect(screen.getByText('useEffect cleanup')).toBeInTheDocument()
+    expect(screen.queryByText('Python hello world')).not.toBeInTheDocument()
   })
 
   it('muestra banner plan cuando snippets >= 80% del límite', () => {
