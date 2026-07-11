@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import {
   Home,
   Search,
@@ -26,6 +26,10 @@ import {
 import { useUiStore } from '@/store/uiStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useFeatureGate } from '@/hooks/useFeatureGate'
+
+const HUB_URL = import.meta.env.VITE_HUB_URL ?? 'http://localhost:5175'
+
+const PLAN_ORDER = ['free', 'starter', 'professional', 'enterprise']
 
 interface MenuItem {
   label: string
@@ -90,12 +94,11 @@ const MENU_GROUPS: MenuGroup[] = [
 ]
 
 function Sidebar() {
-  const navigate = useNavigate()
   const { sidebarOpen } = useUiStore()
   const { hasPermission } = usePermissions()
   const { hasFeature, plan } = useFeatureGate()
 
-  const canUpgradePlan = plan === 'free' || plan === 'starter'
+  const canUpgradePlan = !!plan && PLAN_ORDER.indexOf(plan) < PLAN_ORDER.length - 1
 
   const visibleGroups = MENU_GROUPS.map((group) => ({
     ...group,
@@ -156,12 +159,12 @@ function Sidebar() {
         <div className="p-4 mx-2 mb-4 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white">
           <p className="text-xs font-semibold mb-1">Mejora tu plan</p>
           <p className="text-xs opacity-90 mb-3">Desbloquea más funcionalidades</p>
-          <button
-            onClick={() => navigate('/subscription')}
-            className="w-full text-xs bg-white text-primary-700 font-semibold py-1.5 rounded-lg hover:bg-primary-50 transition-colors"
+          <a
+            href={`${HUB_URL}/subscription`}
+            className="block w-full text-center text-xs bg-white text-primary-700 font-semibold py-1.5 rounded-lg hover:bg-primary-50 transition-colors"
           >
             Ver planes
-          </button>
+          </a>
         </div>
       )}
     </aside>

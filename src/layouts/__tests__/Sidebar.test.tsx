@@ -151,10 +151,34 @@ describe('Sidebar', () => {
     renderSidebar()
 
     expect(screen.getByText('Mejora tu plan')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /ver planes/i })).toBeInTheDocument()
+    const link = screen.getByRole('link', { name: /ver planes/i })
+    expect(link).toBeInTheDocument()
+    expect(link).toHaveAttribute('href', `${import.meta.env.VITE_HUB_URL ?? 'http://localhost:5175'}/subscription`)
   })
 
-  it('hides upgrade CTA when plan is professional', () => {
+  it('hides upgrade CTA when plan is enterprise', () => {
+    vi.mocked(usePermissions).mockReturnValue({
+      hasPermission: () => true,
+      hasRole: () => false,
+      isOwner: false,
+      isAdmin: true,
+      getPrimaryRole: () => 'Owner',
+      getRoleColor: () => '#dc2626',
+      tenant: null,
+    })
+    vi.mocked(useFeatureGate).mockReturnValue({
+      hasFeature: () => true,
+      getLimit: () => null,
+      plan: 'enterprise',
+      isLoading: false,
+    })
+
+    renderSidebar()
+
+    expect(screen.queryByText('Mejora tu plan')).not.toBeInTheDocument()
+  })
+
+  it('shows upgrade CTA when plan is professional (puede subir a Enterprise)', () => {
     vi.mocked(usePermissions).mockReturnValue({
       hasPermission: () => true,
       hasRole: () => false,
@@ -173,6 +197,6 @@ describe('Sidebar', () => {
 
     renderSidebar()
 
-    expect(screen.queryByText('Mejora tu plan')).not.toBeInTheDocument()
+    expect(screen.getByText('Mejora tu plan')).toBeInTheDocument()
   })
 })
