@@ -9,6 +9,7 @@ import { useUpdateNote } from '../hooks/useUpdateNote'
 import { useDeleteNote } from '../hooks/useDeleteNote'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
 import { useNoteTagSuggestions } from '../hooks/useNoteTagSuggestions'
+import { useCategories } from '../hooks/useCategories'
 import type { Note } from '../types'
 
 vi.mock('../hooks/useNotes')
@@ -17,18 +18,22 @@ vi.mock('../hooks/useUpdateNote')
 vi.mock('../hooks/useDeleteNote')
 vi.mock('@/features/dashboard/hooks/useDashboardSummary')
 vi.mock('../hooks/useNoteTagSuggestions')
+vi.mock('../hooks/useCategories')
 vi.mock('@/features/sharing/components/ShareResourceModal', () => ({
   ShareResourceModal: ({ resources }: { resources: { id: string; title: string }[] }) => (
     <div data-testid="share-modal">{resources.length} recursos a compartir</div>
   ),
 }))
 
+const workCategory = { id: 'cat-work', name: 'Trabajo', color: '#3b82f6', notes_count: 2 }
+const personalCategory = { id: 'cat-personal', name: 'Personal', color: '#10b981', notes_count: 1 }
+
 const mockNotes: Note[] = [
   {
     id: 'n1',
     title: 'Meeting notes',
     content: 'Content about the meeting with the team',
-    category: 'work',
+    category: workCategory,
     tags: ['meeting', 'team'],
     is_pinned: true,
     is_shared: false,
@@ -40,7 +45,7 @@ const mockNotes: Note[] = [
     id: 'n2',
     title: 'Grocery list',
     content: 'Milk, eggs, bread',
-    category: 'personal',
+    category: personalCategory,
     tags: [],
     is_pinned: false,
     is_shared: false,
@@ -52,7 +57,7 @@ const mockNotes: Note[] = [
     id: 'n3',
     title: 'Project idea',
     content: 'Build a new app',
-    category: 'work',
+    category: workCategory,
     tags: ['idea'],
     is_pinned: false,
     is_shared: true,
@@ -128,6 +133,11 @@ describe('NotesPage', () => {
       data: ['meeting', 'team', 'idea'],
       isLoading: false,
     } as ReturnType<typeof useNoteTagSuggestions>)
+
+    vi.mocked(useCategories).mockReturnValue({
+      data: [workCategory, personalCategory],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useCategories>)
   })
 
   it('renderiza el título de la página', () => {
@@ -169,7 +179,7 @@ describe('NotesPage', () => {
   it('filtra notas por categoría', () => {
     renderNotesPage()
     const select = screen.getByLabelText('Filtrar por categoría')
-    fireEvent.change(select, { target: { value: 'personal' } })
+    fireEvent.change(select, { target: { value: 'cat-personal' } })
     // Only the personal note should be shown (Grocery list)
     expect(screen.getByText('Grocery list')).toBeInTheDocument()
     expect(screen.queryByText('Project idea')).not.toBeInTheDocument()

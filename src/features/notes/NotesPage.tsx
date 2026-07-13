@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Plus, FileText, Pin, LayoutGrid, LayoutList, CheckSquare } from 'lucide-react'
+import { Plus, FileText, Pin, LayoutGrid, LayoutList, CheckSquare, FolderOpen } from 'lucide-react'
 import { useNotes } from './hooks/useNotes'
 import { useDeleteNote } from './hooks/useDeleteNote'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
 import { useImportNotes } from './hooks/useImportNotes'
 import { useNoteTagSuggestions } from './hooks/useNoteTagSuggestions'
+import { useCategories } from './hooks/useCategories'
 import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
 import ImportButton from '@/components/shared/ImportButton'
 import ImportModal from '@/components/shared/ImportModal'
@@ -13,6 +14,7 @@ import { parseNotesFile } from '@/lib/import'
 import { NoteFilters } from './components/NoteFilters'
 import { NoteCard } from './components/NoteCard'
 import { NoteModal } from './components/NoteModal'
+import { ManageCategoriesModal } from './components/ManageCategoriesModal'
 import { ShareResourceModal } from '@/features/sharing/components/ShareResourceModal'
 import { useBulkSelection } from '@/features/sharing/hooks/useBulkSelection'
 import { BulkActionBar } from '@/features/sharing/components/BulkActionBar'
@@ -22,6 +24,7 @@ const EMPTY_FILTERS: NoteFiltersState = { search: '', category: '', pinned_only:
 
 export default function NotesPage() {
   const [modalOpen, setModalOpen] = useState(false)
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false)
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [shareResources, setShareResources] = useState<{ id: string; title: string }[] | null>(null)
   const [filters, setFilters] = useState<NoteFiltersState>(EMPTY_FILTERS)
@@ -29,6 +32,7 @@ export default function NotesPage() {
   const bulk = useBulkSelection()
 
   const { data, isLoading } = useNotes(filters)
+  const { data: categories = [] } = useCategories()
   const deleteNote = useDeleteNote()
   const importNotes = useImportNotes()
   const { data: summaryData } = useDashboardSummary()
@@ -45,7 +49,7 @@ export default function NotesPage() {
         note.title.toLowerCase().includes(q) || note.content.toLowerCase().includes(q)
       if (!matches) return false
     }
-    if (filters.category && note.category !== filters.category) return false
+    if (filters.category && note.category?.id !== filters.category) return false
     if (filters.pinned_only && !note.is_pinned) return false
     if (filters.tag && !note.tags.includes(filters.tag)) return false
     return true
@@ -97,7 +101,7 @@ export default function NotesPage() {
           filteredNotes.map((n) => ({
             title: n.title,
             content: n.content,
-            category: n.category,
+            category: n.category?.name,
             tags: n.tags,
             created_at: n.created_at,
           })),
@@ -120,7 +124,7 @@ export default function NotesPage() {
             [
               toCSV(filteredNotes, [
                 { label: 'Título', value: (n) => n.title },
-                { label: 'Categoría', value: (n) => n.category },
+                { label: 'Categoría', value: (n) => n.category?.name ?? '' },
                 { label: 'Tags', value: (n) => n.tags.join('; ') },
                 { label: 'Fijada', value: (n) => (n.is_pinned ? 'Sí' : 'No') },
                 { label: 'Creada', value: (n) => n.created_at },
@@ -168,6 +172,13 @@ export default function NotesPage() {
             disabledHint="Actualiza tu plan para exportar notas"
           />
           <button
+            onClick={() => setShowCategoriesModal(true)}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <FolderOpen className="w-4 h-4" />
+            Gestionar categorías
+          </button>
+          <button
             onClick={() => {
               setEditingNote(null)
               setModalOpen(true)
@@ -194,6 +205,7 @@ export default function NotesPage() {
           filters={filters}
           onChange={setFilters}
           totalCount={total}
+          categories={categories}
           tags={tagSuggestions ?? []}
         />
       </div>
@@ -316,6 +328,9 @@ export default function NotesPage() {
       </div>
 
       <NoteModal note={editingNote} open={modalOpen} onClose={handleCloseModal} />
+      {showCategoriesModal && (
+        <ManageCategoriesModal onClose={() => setShowCategoriesModal(false)} />
+      )}
       {shareResources && (
         <ShareResourceModal
           resourceType="note"

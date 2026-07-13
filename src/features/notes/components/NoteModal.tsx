@@ -6,14 +6,15 @@ import { X, Pin } from 'lucide-react'
 import { useCreateNote } from '../hooks/useCreateNote'
 import { useUpdateNote } from '../hooks/useUpdateNote'
 import { useNoteTagSuggestions } from '../hooks/useNoteTagSuggestions'
+import { useCategories } from '../hooks/useCategories'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { TagInput } from './TagInput'
-import type { Note, NoteCategory } from '../types'
+import type { Note } from '../types'
 
 const schema = z.object({
   title: z.string().min(1, 'El título es requerido').max(200, 'Máximo 200 caracteres'),
   content: z.string().min(1, 'El contenido es requerido').max(10000, 'Máximo 10000 caracteres'),
-  category: z.enum(['work', 'personal', 'ideas', 'archive'] as const),
+  category: z.string().optional(),
   tags: z.array(z.string()),
   is_pinned: z.boolean().optional(),
 })
@@ -32,6 +33,7 @@ export function NoteModal({ note, open, onClose }: Props) {
   const createNote = useCreateNote()
   const updateNote = useUpdateNote()
   const { data: tagSuggestions } = useNoteTagSuggestions()
+  const { data: categories = [] } = useCategories()
 
   const {
     register,
@@ -44,7 +46,7 @@ export function NoteModal({ note, open, onClose }: Props) {
     defaultValues: {
       title: '',
       content: '',
-      category: 'work',
+      category: '',
       tags: [],
       is_pinned: false,
     },
@@ -57,14 +59,14 @@ export function NoteModal({ note, open, onClose }: Props) {
           ? {
               title: note.title,
               content: note.content,
-              category: note.category,
+              category: note.category?.id ?? '',
               tags: note.tags,
               is_pinned: note.is_pinned,
             }
           : {
               title: '',
               content: '',
-              category: 'work',
+              category: '',
               tags: [],
               is_pinned: false,
             },
@@ -76,7 +78,7 @@ export function NoteModal({ note, open, onClose }: Props) {
     const payload = {
       title: data.title,
       content: data.content,
-      category: data.category as NoteCategory,
+      category: data.category || null,
       tags: data.tags,
       is_pinned: data.is_pinned ?? false,
     }
@@ -176,10 +178,12 @@ export function NoteModal({ note, open, onClose }: Props) {
                 {...register('category')}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="work">Trabajo</option>
-                <option value="personal">Personal</option>
-                <option value="ideas">Ideas</option>
-                <option value="archive">Archivo</option>
+                <option value="">Sin categoría</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>

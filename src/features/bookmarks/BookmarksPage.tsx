@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Bookmark } from 'lucide-react'
+import { Plus, Bookmark, FolderOpen } from 'lucide-react'
 import { useBookmarks } from './hooks/useBookmarks'
 import { useCollections } from './hooks/useCollections'
 import { useDeleteBookmark } from './hooks/useDeleteBookmark'
@@ -9,15 +9,18 @@ import { useBookmarkTagSuggestions } from './hooks/useBookmarkTagSuggestions'
 import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
 import ImportButton from '@/components/shared/ImportButton'
 import ImportModal from '@/components/shared/ImportModal'
+import FeatureGate from '@/components/shared/FeatureGate'
 import { toCSV, toJSON, toBookmarksHTML, downloadBlob } from '@/lib/export'
 import { parseBookmarks } from '@/lib/import'
 import { BookmarkFilters, EMPTY_FILTERS } from './components/BookmarkFilters'
 import { BookmarkCard } from './components/BookmarkCard'
 import { BookmarkModal } from './components/BookmarkModal'
+import { ManageCollectionsModal } from './components/ManageCollectionsModal'
 import type { Bookmark as BookmarkType, BookmarkFiltersState } from './types'
 
 export default function BookmarksPage() {
   const [showModal, setShowModal] = useState(false)
+  const [showCollectionsModal, setShowCollectionsModal] = useState(false)
   const [bookmarkToEdit, setBookmarkToEdit] = useState<BookmarkType | null>(null)
   const [filters, setFilters] = useState<BookmarkFiltersState>(EMPTY_FILTERS)
 
@@ -142,6 +145,28 @@ export default function BookmarksPage() {
             disabledHint="Actualiza tu plan para exportar bookmarks"
           />
 
+          <FeatureGate
+            feature="bookmark_collections"
+            fallback={
+              <button
+                disabled
+                title="Actualiza tu plan para gestionar colecciones"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
+              >
+                <FolderOpen className="w-4 h-4" />
+                Gestionar colecciones
+              </button>
+            }
+          >
+            <button
+              onClick={() => setShowCollectionsModal(true)}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <FolderOpen className="w-4 h-4" />
+              Gestionar colecciones
+            </button>
+          </FeatureGate>
+
           <button
             onClick={() => {
               setBookmarkToEdit(null)
@@ -206,6 +231,9 @@ export default function BookmarksPage() {
 
       {/* Modal */}
       {showModal && <BookmarkModal bookmark={bookmarkToEdit} onClose={handleCloseModal} />}
+      {showCollectionsModal && (
+        <ManageCollectionsModal onClose={() => setShowCollectionsModal(false)} />
+      )}
     </div>
   )
 }

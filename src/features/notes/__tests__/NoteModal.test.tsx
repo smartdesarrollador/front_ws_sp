@@ -5,11 +5,13 @@ import { NoteModal } from '../components/NoteModal'
 import { useCreateNote } from '../hooks/useCreateNote'
 import { useUpdateNote } from '../hooks/useUpdateNote'
 import { useNoteTagSuggestions } from '../hooks/useNoteTagSuggestions'
+import { useCategories } from '../hooks/useCategories'
 import type { Note } from '../types'
 
 vi.mock('../hooks/useCreateNote')
 vi.mock('../hooks/useUpdateNote')
 vi.mock('../hooks/useNoteTagSuggestions')
+vi.mock('../hooks/useCategories')
 
 const mockCreateMutate = vi.fn()
 const mockUpdateMutate = vi.fn()
@@ -18,7 +20,7 @@ const existingNote: Note = {
   id: 'n1',
   title: 'Meeting notes',
   content: 'Content about the meeting',
-  category: 'work',
+  category: { id: 'c1', name: 'Trabajo', color: '#3b82f6', notes_count: 1 },
   tags: ['trabajo', 'reunion'],
   is_pinned: false,
   is_shared: false,
@@ -57,6 +59,10 @@ describe('NoteModal — Etiquetas', () => {
     vi.mocked(useNoteTagSuggestions).mockReturnValue({
       data: ['urgente', 'trabajo'],
     } as unknown as ReturnType<typeof useNoteTagSuggestions>)
+
+    vi.mocked(useCategories).mockReturnValue({
+      data: [{ id: 'c1', name: 'Trabajo', color: '#3b82f6', notes_count: 1 }],
+    } as unknown as ReturnType<typeof useCategories>)
   })
 
   it('agrega una etiqueta normalizada al presionar Enter', () => {

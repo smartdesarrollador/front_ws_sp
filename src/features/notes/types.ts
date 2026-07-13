@@ -1,24 +1,15 @@
-export type NoteCategory = 'work' | 'personal' | 'ideas' | 'archive'
-
-export const CATEGORY_COLORS: Record<NoteCategory, string> = {
-  work:     '#3b82f6',
-  personal: '#10b981',
-  ideas:    '#f59e0b',
-  archive:  '#6b7280',
-}
-
-export const CATEGORY_LABELS: Record<NoteCategory, string> = {
-  work:     'Trabajo',
-  personal: 'Personal',
-  ideas:    'Ideas',
-  archive:  'Archivo',
+export interface NoteCategory {
+  id: string
+  name: string
+  color: string
+  notes_count: number
 }
 
 export interface Note {
   id: string
   title: string
   content: string
-  category: NoteCategory
+  category: NoteCategory | null
   tags: string[]
   is_pinned: boolean
   is_shared: boolean
@@ -29,7 +20,7 @@ export interface Note {
 
 export interface NoteFiltersState {
   search: string
-  category: NoteCategory | ''
+  category: string
   pinned_only: boolean
   tag: string
 }
@@ -37,7 +28,7 @@ export interface NoteFiltersState {
 export interface CreateNoteRequest {
   title: string
   content: string
-  category: NoteCategory
+  category?: string | null
   tags?: string[]
   is_pinned?: boolean
 }

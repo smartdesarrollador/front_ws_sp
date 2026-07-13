@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Pin, Pencil, Trash2, Share2 } from 'lucide-react'
 import type { Note } from '../types'
-import { CATEGORY_COLORS } from '../types'
 import { CategoryBadge } from './CategoryBadge'
 
 interface Props {
@@ -34,7 +33,7 @@ export function NoteCard({
     }
   }
 
-  const borderColor = CATEGORY_COLORS[note.category]
+  const borderColor = note.category?.color ?? '#d1d5db'
 
   return (
     <div
