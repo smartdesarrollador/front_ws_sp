@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Plus, List, Columns } from 'lucide-react'
+import { apiClient } from '@/lib/axios'
 import { useTasks } from './hooks/useTasks'
 import { useDeleteTask } from './hooks/useDeleteTask'
 import { useFeatureGate } from '@/hooks/useFeatureGate'
@@ -19,14 +20,19 @@ import type { Task, TaskFiltersState } from './types'
 
 const EMPTY_FILTERS: TaskFiltersState = { search: '', status: '', priority: '' }
 
+interface AllTasksResponse {
+  tasks: Task[]
+}
+
 export default function TasksPage() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [modalOpen, setModalOpen] = useState(searchParams.get('new') === 'true')
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [filters, setFilters] = useState<TaskFiltersState>(EMPTY_FILTERS)
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
+  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1)
 
-  const { data, isLoading } = useTasks(filters)
+  const { data, isLoading } = useTasks(filters, page, viewMode === 'list')
   const deleteTask = useDeleteTask()
   const importTasks = useImportTasks()
   const { hasFeature } = useFeatureGate()
@@ -53,17 +59,44 @@ export default function TasksPage() {
     setEditingTask(null)
   }
 
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (newPage <= 1) next.delete('page')
+      else next.set('page', String(newPage))
+      return next
+    })
+  }
+
+  const handleFiltersChange = (f: TaskFiltersState) => {
+    setFilters(f)
+    handlePageChange(1)
+  }
+
   const kanbanDisabled = !hasFeature('kanban_view')
+
+  // Exportar siempre trae todas las tareas que matchean los filtros (sin paginar),
+  // independiente de cuántas estén cargadas en la página actual de la vista Lista.
+  const fetchAllTasksForExport = async () => {
+    const params: Record<string, string> = {}
+    if (filters.search) params.search = filters.search
+    if (filters.status) params.status = filters.status
+    if (filters.priority) params.priority = filters.priority
+    const { data: allData } = await apiClient.get<AllTasksResponse>('/app/tasks/', { params })
+    return allData.tasks
+  }
 
   const exportFormats: ExportFormat[] = [
     {
       id: 'csv',
       label: 'CSV',
-      run: () =>
+      run: async () => {
+        const allTasks = await fetchAllTasksForExport()
         downloadBlob(
           new Blob(
             [
-              toCSV(tasks, [
+              toCSV(allTasks, [
                 { label: 'Título', value: (t) => t.title },
                 { label: 'Descripción', value: (t) => t.description ?? '' },
                 { label: 'Estado', value: (t) => t.status },
@@ -75,12 +108,16 @@ export default function TasksPage() {
             { type: 'text/csv;charset=utf-8' },
           ),
           'tareas.csv',
-        ),
+        )
+      },
     },
     {
       id: 'json',
       label: 'JSON',
-      run: () => downloadBlob(new Blob([toJSON(tasks)], { type: 'application/json' }), 'tareas.json'),
+      run: async () => {
+        const allTasks = await fetchAllTasksForExport()
+        downloadBlob(new Blob([toJSON(allTasks)], { type: 'application/json' }), 'tareas.json')
+      },
     },
   ]
 
@@ -138,7 +175,7 @@ export default function TasksPage() {
       {/* View toggle + filters */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <TaskFilters filters={filters} onChange={setFilters} totalCount={total} />
+          <TaskFilters filters={filters} onChange={handleFiltersChange} totalCount={total} />
           <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-lg p-1">
             <button
               onClick={() => setViewMode('list')}
@@ -174,7 +211,14 @@ export default function TasksPage() {
         </div>
 
         {viewMode === 'list' ? (
-          <TaskListView tasks={tasks} isLoading={isLoading} onEdit={handleEdit} onDelete={handleDelete} />
+          <TaskListView
+            tasks={tasks}
+            isLoading={isLoading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            pagination={data?.pagination}
+            onPageChange={handlePageChange}
+          />
         ) : (
           <TaskKanbanView tasks={tasks} isLoading={isLoading} onEdit={handleEdit} onDelete={handleDelete} />
         )}

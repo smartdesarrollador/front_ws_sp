@@ -24,6 +24,12 @@ export interface SnippetFiltersState {
   tag: string
 }
 
+export interface SnippetPagination {
+  page: number
+  per_page: number
+  total: number
+}
+
 export interface CreateSnippetRequest {
   title: string
   code: string

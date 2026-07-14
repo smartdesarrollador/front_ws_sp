@@ -13,7 +13,10 @@ const mockTask = {
 
 export const tasksHandlers = [
   http.get(`${API}/app/tasks/`, () =>
-    HttpResponse.json({ results: [mockTask], count: 1 }),
+    HttpResponse.json({
+      tasks: [mockTask],
+      pagination: { page: 1, per_page: 20, total: 1 },
+    }),
   ),
 
   http.post(`${API}/app/tasks/`, () => HttpResponse.json(mockTask, { status: 201 })),

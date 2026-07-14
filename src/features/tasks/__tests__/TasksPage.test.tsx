@@ -66,7 +66,7 @@ describe('TasksPage', () => {
     vi.clearAllMocks()
 
     vi.mocked(useTasks).mockReturnValue({
-      data: { tasks: mockTasks, total: 2 },
+      data: { tasks: mockTasks, total: 2, pagination: { page: 1, per_page: 20, total: 2 } },
       isLoading: false,
     } as ReturnType<typeof useTasks>)
 
@@ -147,12 +147,13 @@ describe('TasksPage', () => {
 
   it('muestra estado vacío cuando no hay tareas', () => {
     vi.mocked(useTasks).mockReturnValue({
-      data: { tasks: [], total: 0 },
+      data: { tasks: [], total: 0, pagination: { page: 1, per_page: 20, total: 0 } },
       isLoading: false,
     } as unknown as ReturnType<typeof useTasks>)
 
     renderTasksPage()
     expect(screen.getByText('No hay tareas')).toBeInTheDocument()
+    expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument()
   })
 
   it('abre modal al hacer click en Nueva Tarea', () => {
@@ -292,5 +293,76 @@ describe('TasksPage', () => {
   it('abre modal cuando URL tiene ?new=true', () => {
     renderTasksPage('/tasks?new=true')
     expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('muestra los botones Anterior y Siguiente y el texto Página X de Y cuando hay más de una página', () => {
+    vi.mocked(useTasks).mockReturnValue({
+      data: { tasks: mockTasks, total: 45, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useTasks>)
+
+    renderTasksPage()
+    expect(screen.getByText('Página 1 de 3')).toBeInTheDocument()
+    expect(screen.getByLabelText('Página anterior')).toBeDisabled()
+    expect(screen.getByLabelText('Página siguiente')).not.toBeDisabled()
+  })
+
+  it('deshabilita Siguiente en la última página', () => {
+    vi.mocked(useTasks).mockReturnValue({
+      data: { tasks: mockTasks, total: 45, pagination: { page: 3, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useTasks>)
+
+    renderTasksPage()
+    expect(screen.getByText('Página 3 de 3')).toBeInTheDocument()
+    expect(screen.getByLabelText('Página siguiente')).toBeDisabled()
+  })
+
+  it('no muestra controles de paginación en vista Kanban', () => {
+    vi.mocked(useTasks).mockReturnValue({
+      data: { tasks: mockTasks, total: 45, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useTasks>)
+
+    renderTasksPage()
+    fireEvent.click(screen.getByLabelText('Vista kanban'))
+    expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument()
+  })
+
+  it('al hacer click en Siguiente pide la página 2 al hook useTasks', () => {
+    vi.mocked(useTasks).mockReturnValue({
+      data: { tasks: mockTasks, total: 45, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useTasks>)
+
+    renderTasksPage()
+    fireEvent.click(screen.getByLabelText('Página siguiente'))
+    expect(useTasks).toHaveBeenLastCalledWith(expect.anything(), 2, true)
+  })
+
+  it('resetea a página 1 al cambiar un filtro', () => {
+    vi.mocked(useTasks).mockReturnValue({
+      data: { tasks: mockTasks, total: 45, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useTasks>)
+
+    renderTasksPage()
+    fireEvent.click(screen.getByLabelText('Página siguiente'))
+    expect(useTasks).toHaveBeenLastCalledWith(expect.anything(), 2, true)
+
+    fireEvent.change(screen.getByPlaceholderText('Buscar tareas...'), {
+      target: { value: 'bug' },
+    })
+    expect(useTasks).toHaveBeenLastCalledWith(expect.anything(), 1, true)
+  })
+
+  it('lee la página inicial desde la URL ?page=2', () => {
+    vi.mocked(useTasks).mockReturnValue({
+      data: { tasks: mockTasks, total: 45, pagination: { page: 2, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useTasks>)
+
+    renderTasksPage('/tasks?page=2')
+    expect(useTasks).toHaveBeenLastCalledWith(expect.anything(), 2, true)
   })
 })

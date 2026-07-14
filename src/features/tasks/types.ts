@@ -27,6 +27,12 @@ export interface TaskFiltersState {
   priority: TaskPriority | ''
 }
 
+export interface TaskPagination {
+  page: number
+  per_page: number
+  total: number
+}
+
 export interface CreateTaskRequest {
   title: string
   description?: string

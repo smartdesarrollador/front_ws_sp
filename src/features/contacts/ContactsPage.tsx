@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, Users, CheckSquare } from 'lucide-react'
+import { apiClient } from '@/lib/axios'
 import { useContacts } from './hooks/useContacts'
 import { useContactGroups } from './hooks/useContactGroups'
 import { useDeleteContact } from './hooks/useDeleteContact'
@@ -8,6 +10,7 @@ import { useImportContacts } from './hooks/useImportContacts'
 import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
 import ImportButton from '@/components/shared/ImportButton'
 import ImportModal from '@/components/shared/ImportModal'
+import Pagination from '@/components/shared/Pagination'
 import FeatureGate from '@/components/shared/FeatureGate'
 import { toCSV, toVCard, downloadBlob } from '@/lib/export'
 import { parseContacts } from '@/lib/import'
@@ -20,22 +23,29 @@ import { useBulkSelection } from '@/features/sharing/hooks/useBulkSelection'
 import { BulkActionBar } from '@/features/sharing/components/BulkActionBar'
 import type { Contact, ContactFiltersState } from './types'
 
+interface AllContactsResponse {
+  contacts: Contact[]
+}
+
 export default function ContactsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [showModal, setShowModal] = useState(false)
   const [showGroupsModal, setShowGroupsModal] = useState(false)
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null)
   const [shareResources, setShareResources] = useState<{ id: string; title: string }[] | null>(null)
   const [filters, setFilters] = useState<ContactFiltersState>(EMPTY_FILTERS)
+  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1)
   const bulk = useBulkSelection()
 
-  const { data, isLoading } = useContacts(filters)
+  const { data, isLoading } = useContacts(filters, page)
   const { data: groups = [] } = useContactGroups()
   const deleteContact = useDeleteContact()
   const importContacts = useImportContacts()
   const { data: summaryData } = useDashboardSummary()
 
   const allContacts = data?.contacts ?? []
-  const total = data?.total ?? 0
+  const pagination = data?.pagination
+  const total = pagination?.total ?? 0
 
   // Frontend filtering: search in name+email+company, group_id exact match
   const filteredContacts = allContacts.filter((contact) => {
@@ -50,6 +60,39 @@ export default function ContactsPage() {
     if (filters.group_id && contact.group?.id !== filters.group_id) return false
     return true
   })
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (newPage <= 1) next.delete('page')
+      else next.set('page', String(newPage))
+      return next
+    })
+  }
+
+  const handleFiltersChange = (f: ContactFiltersState) => {
+    setFilters(f)
+    handlePageChange(1)
+  }
+
+  const fetchAllContactsForExport = async () => {
+    const params: Record<string, string> = {}
+    if (filters.search) params.search = filters.search
+    if (filters.group_id) params.group = filters.group_id
+    const { data: allData } = await apiClient.get<AllContactsResponse>('/app/contacts/', { params })
+    return allData.contacts.filter((contact) => {
+      if (filters.search) {
+        const q = filters.search.toLowerCase()
+        const matches =
+          contact.name.toLowerCase().includes(q) ||
+          contact.email.toLowerCase().includes(q) ||
+          (contact.company ?? '').toLowerCase().includes(q)
+        if (!matches) return false
+      }
+      return true
+    })
+  }
 
   // Plan limit banner
   const contactsCount = summaryData?.usage.contacts ?? 0
@@ -86,12 +129,13 @@ export default function ContactsPage() {
     {
       id: 'vcard',
       label: 'vCard (.vcf)',
-      run: () =>
+      run: async () => {
+        const contacts = await fetchAllContactsForExport()
         downloadBlob(
           new Blob(
             [
               toVCard(
-                filteredContacts.map((c) => ({
+                contacts.map((c) => ({
                   name: c.name,
                   email: c.email,
                   phone: c.phone,
@@ -104,16 +148,18 @@ export default function ContactsPage() {
             { type: 'text/vcard;charset=utf-8' },
           ),
           'contactos.vcf',
-        ),
+        )
+      },
     },
     {
       id: 'csv',
       label: 'CSV',
-      run: () =>
+      run: async () => {
+        const contacts = await fetchAllContactsForExport()
         downloadBlob(
           new Blob(
             [
-              toCSV(filteredContacts, [
+              toCSV(contacts, [
                 { label: 'Nombre', value: (c) => c.name },
                 { label: 'Email', value: (c) => c.email },
                 { label: 'Teléfono', value: (c) => c.phone ?? '' },
@@ -125,7 +171,8 @@ export default function ContactsPage() {
             { type: 'text/csv;charset=utf-8' },
           ),
           'contactos.csv',
-        ),
+        )
+      },
     },
   ]
 
@@ -212,7 +259,7 @@ export default function ContactsPage() {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <ContactFilters
           filters={filters}
-          onChange={setFilters}
+          onChange={handleFiltersChange}
           totalCount={total}
           groups={groups}
         />
@@ -269,6 +316,15 @@ export default function ContactsPage() {
             />
           ))}
         </div>
+      )}
+
+      {!isLoading && pagination && (
+        <Pagination
+          page={pagination.page}
+          perPage={pagination.per_page}
+          total={pagination.total}
+          onPageChange={handlePageChange}
+        />
       )}
 
       {/* Modals */}

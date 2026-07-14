@@ -25,6 +25,12 @@ export interface ContactFiltersState {
   group_id: string
 }
 
+export interface ContactPagination {
+  page: number
+  per_page: number
+  total: number
+}
+
 export interface CreateContactRequest {
   name: string
   email: string

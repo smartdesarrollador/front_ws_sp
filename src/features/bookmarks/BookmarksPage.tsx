@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, Bookmark, FolderOpen } from 'lucide-react'
+import { apiClient } from '@/lib/axios'
 import { useBookmarks } from './hooks/useBookmarks'
 import { useCollections } from './hooks/useCollections'
 import { useDeleteBookmark } from './hooks/useDeleteBookmark'
@@ -9,6 +11,7 @@ import { useBookmarkTagSuggestions } from './hooks/useBookmarkTagSuggestions'
 import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
 import ImportButton from '@/components/shared/ImportButton'
 import ImportModal from '@/components/shared/ImportModal'
+import Pagination from '@/components/shared/Pagination'
 import FeatureGate from '@/components/shared/FeatureGate'
 import { toCSV, toJSON, toBookmarksHTML, downloadBlob } from '@/lib/export'
 import { parseBookmarks } from '@/lib/import'
@@ -18,13 +21,19 @@ import { BookmarkModal } from './components/BookmarkModal'
 import { ManageCollectionsModal } from './components/ManageCollectionsModal'
 import type { Bookmark as BookmarkType, BookmarkFiltersState } from './types'
 
+interface AllBookmarksResponse {
+  bookmarks: BookmarkType[]
+}
+
 export default function BookmarksPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [showModal, setShowModal] = useState(false)
   const [showCollectionsModal, setShowCollectionsModal] = useState(false)
   const [bookmarkToEdit, setBookmarkToEdit] = useState<BookmarkType | null>(null)
   const [filters, setFilters] = useState<BookmarkFiltersState>(EMPTY_FILTERS)
+  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1)
 
-  const { data, isLoading } = useBookmarks(filters)
+  const { data, isLoading } = useBookmarks(filters, page)
   const { data: collections = [] } = useCollections()
   const deleteBookmark = useDeleteBookmark()
   const importBookmarks = useImportBookmarks()
@@ -32,7 +41,8 @@ export default function BookmarksPage() {
   const { data: tagSuggestions } = useBookmarkTagSuggestions()
 
   const allBookmarks = data?.bookmarks ?? []
-  const total = data?.total ?? 0
+  const pagination = data?.pagination
+  const total = pagination?.total ?? 0
 
   // Frontend filtering
   const filteredBookmarks = allBookmarks.filter((b) => {
@@ -48,6 +58,40 @@ export default function BookmarksPage() {
     if (filters.tag && !b.tags.includes(filters.tag)) return false
     return true
   })
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (newPage <= 1) next.delete('page')
+      else next.set('page', String(newPage))
+      return next
+    })
+  }
+
+  const handleFiltersChange = (f: BookmarkFiltersState) => {
+    setFilters(f)
+    handlePageChange(1)
+  }
+
+  const fetchAllBookmarksForExport = async () => {
+    const params: Record<string, string> = {}
+    if (filters.search) params.search = filters.search
+    if (filters.collection_id) params.collection = filters.collection_id
+    if (filters.tag) params.tag = filters.tag
+    const { data: allData } = await apiClient.get<AllBookmarksResponse>('/app/bookmarks/', { params })
+    return allData.bookmarks.filter((b) => {
+      if (filters.search) {
+        const q = filters.search.toLowerCase()
+        const matches =
+          b.title.toLowerCase().includes(q) ||
+          b.url.toLowerCase().includes(q) ||
+          (b.description ?? '').toLowerCase().includes(q)
+        if (!matches) return false
+      }
+      return true
+    })
+  }
 
   // Plan limit banner
   const bookmarksCount = summaryData?.usage.bookmarks ?? 0
@@ -72,23 +116,26 @@ export default function BookmarksPage() {
     {
       id: 'html',
       label: 'HTML (navegador)',
-      run: () =>
+      run: async () => {
+        const bookmarks = await fetchAllBookmarksForExport()
         downloadBlob(
           new Blob(
-            [toBookmarksHTML(filteredBookmarks.map((b) => ({ title: b.title, url: b.url, tags: b.tags })))],
+            [toBookmarksHTML(bookmarks.map((b) => ({ title: b.title, url: b.url, tags: b.tags })))],
             { type: 'text/html;charset=utf-8' },
           ),
           'bookmarks.html',
-        ),
+        )
+      },
     },
     {
       id: 'csv',
       label: 'CSV',
-      run: () =>
+      run: async () => {
+        const bookmarks = await fetchAllBookmarksForExport()
         downloadBlob(
           new Blob(
             [
-              toCSV(filteredBookmarks, [
+              toCSV(bookmarks, [
                 { label: 'Título', value: (b) => b.title },
                 { label: 'URL', value: (b) => b.url },
                 { label: 'Descripción', value: (b) => b.description ?? '' },
@@ -100,13 +147,16 @@ export default function BookmarksPage() {
             { type: 'text/csv;charset=utf-8' },
           ),
           'bookmarks.csv',
-        ),
+        )
+      },
     },
     {
       id: 'json',
       label: 'JSON',
-      run: () =>
-        downloadBlob(new Blob([toJSON(filteredBookmarks)], { type: 'application/json' }), 'bookmarks.json'),
+      run: async () => {
+        const bookmarks = await fetchAllBookmarksForExport()
+        downloadBlob(new Blob([toJSON(bookmarks)], { type: 'application/json' }), 'bookmarks.json')
+      },
     },
   ]
 
@@ -192,7 +242,7 @@ export default function BookmarksPage() {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <BookmarkFilters
           filters={filters}
-          onChange={setFilters}
+          onChange={handleFiltersChange}
           totalCount={total}
           collections={collections}
           tags={tagSuggestions ?? []}
@@ -227,6 +277,15 @@ export default function BookmarksPage() {
             />
           ))}
         </div>
+      )}
+
+      {!isLoading && pagination && (
+        <Pagination
+          page={pagination.page}
+          perPage={pagination.per_page}
+          total={pagination.total}
+          onPageChange={handlePageChange}
+        />
       )}
 
       {/* Modal */}

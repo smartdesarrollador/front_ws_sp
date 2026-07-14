@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, FileText, Pin, LayoutGrid, LayoutList, CheckSquare, FolderOpen } from 'lucide-react'
+import { apiClient } from '@/lib/axios'
 import { useNotes } from './hooks/useNotes'
 import { useDeleteNote } from './hooks/useDeleteNote'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
@@ -9,6 +11,7 @@ import { useCategories } from './hooks/useCategories'
 import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
 import ImportButton from '@/components/shared/ImportButton'
 import ImportModal from '@/components/shared/ImportModal'
+import Pagination from '@/components/shared/Pagination'
 import { toCSV, toJSON, toMarkdownZip, downloadBlob } from '@/lib/export'
 import { parseNotesFile } from '@/lib/import'
 import { NoteFilters } from './components/NoteFilters'
@@ -22,16 +25,22 @@ import type { Note, NoteFiltersState } from './types'
 
 const EMPTY_FILTERS: NoteFiltersState = { search: '', category: '', pinned_only: false, tag: '' }
 
+interface AllNotesResponse {
+  notes: Note[]
+}
+
 export default function NotesPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [modalOpen, setModalOpen] = useState(false)
   const [showCategoriesModal, setShowCategoriesModal] = useState(false)
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [shareResources, setShareResources] = useState<{ id: string; title: string }[] | null>(null)
   const [filters, setFilters] = useState<NoteFiltersState>(EMPTY_FILTERS)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1)
   const bulk = useBulkSelection()
 
-  const { data, isLoading } = useNotes(filters)
+  const { data, isLoading } = useNotes(filters, page)
   const { data: categories = [] } = useCategories()
   const deleteNote = useDeleteNote()
   const importNotes = useImportNotes()
@@ -39,7 +48,7 @@ export default function NotesPage() {
   const { data: tagSuggestions } = useNoteTagSuggestions()
 
   const allNotes = data?.notes ?? []
-  const total = data?.total ?? 0
+  const pagination = data?.pagination
 
   // Frontend filtering: search substring in title+content, exact category, pinned_only
   const filteredNotes = allNotes.filter((note) => {
@@ -57,6 +66,38 @@ export default function NotesPage() {
 
   const pinnedNotes = filteredNotes.filter((n) => n.is_pinned)
   const unpinnedNotes = filteredNotes.filter((n) => !n.is_pinned)
+  const total = pinnedNotes.length + (pagination?.total ?? 0)
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (newPage <= 1) next.delete('page')
+      else next.set('page', String(newPage))
+      return next
+    })
+  }
+
+  const handleFiltersChange = (f: NoteFiltersState) => {
+    setFilters(f)
+    handlePageChange(1)
+  }
+
+  const fetchAllNotesForExport = async () => {
+    const params: Record<string, string> = {}
+    if (filters.search) params.search = filters.search
+    if (filters.category) params.category = filters.category
+    if (filters.tag) params.tag = filters.tag
+    const { data: allData } = await apiClient.get<AllNotesResponse>('/app/notes/', { params })
+    return allData.notes.filter((note) => {
+      if (filters.pinned_only && !note.is_pinned) return false
+      if (filters.search) {
+        const q = filters.search.toLowerCase()
+        if (!note.title.toLowerCase().includes(q) && !note.content.toLowerCase().includes(q)) return false
+      }
+      return true
+    })
+  }
 
   // Plan limit banner
   const notesCount = summaryData?.usage.notes ?? 0
@@ -97,8 +138,9 @@ export default function NotesPage() {
       id: 'md',
       label: 'Markdown (.zip)',
       run: async () => {
+        const notes = await fetchAllNotesForExport()
         const blob = await toMarkdownZip(
-          filteredNotes.map((n) => ({
+          notes.map((n) => ({
             title: n.title,
             content: n.content,
             category: n.category?.name,
@@ -112,17 +154,20 @@ export default function NotesPage() {
     {
       id: 'json',
       label: 'JSON',
-      run: () =>
-        downloadBlob(new Blob([toJSON(filteredNotes)], { type: 'application/json' }), 'notas.json'),
+      run: async () => {
+        const notes = await fetchAllNotesForExport()
+        downloadBlob(new Blob([toJSON(notes)], { type: 'application/json' }), 'notas.json')
+      },
     },
     {
       id: 'csv',
       label: 'CSV (metadatos)',
-      run: () =>
+      run: async () => {
+        const notes = await fetchAllNotesForExport()
         downloadBlob(
           new Blob(
             [
-              toCSV(filteredNotes, [
+              toCSV(notes, [
                 { label: 'Título', value: (n) => n.title },
                 { label: 'Categoría', value: (n) => n.category?.name ?? '' },
                 { label: 'Tags', value: (n) => n.tags.join('; ') },
@@ -133,7 +178,8 @@ export default function NotesPage() {
             { type: 'text/csv;charset=utf-8' },
           ),
           'notas.csv',
-        ),
+        )
+      },
     },
   ]
 
@@ -203,7 +249,7 @@ export default function NotesPage() {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <NoteFilters
           filters={filters}
-          onChange={setFilters}
+          onChange={handleFiltersChange}
           totalCount={total}
           categories={categories}
           tags={tagSuggestions ?? []}
@@ -324,6 +370,15 @@ export default function NotesPage() {
               />
             ))}
           </div>
+        )}
+
+        {!isLoading && !filters.pinned_only && pagination && (
+          <Pagination
+            page={pagination.page}
+            perPage={pagination.per_page}
+            total={pagination.total}
+            onPageChange={handlePageChange}
+          />
         )}
       </div>
 

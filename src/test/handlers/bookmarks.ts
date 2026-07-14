@@ -12,7 +12,10 @@ const mockBookmark = {
 
 export const bookmarksHandlers = [
   http.get(`${API}/app/bookmarks/`, () =>
-    HttpResponse.json({ results: [mockBookmark], count: 1 }),
+    HttpResponse.json({
+      bookmarks: [mockBookmark],
+      pagination: { page: 1, per_page: 20, total: 1 },
+    }),
   ),
 
   http.post(`${API}/app/bookmarks/`, () => HttpResponse.json(mockBookmark, { status: 201 })),

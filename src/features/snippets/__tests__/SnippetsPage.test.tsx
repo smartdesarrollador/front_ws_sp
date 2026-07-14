@@ -81,12 +81,12 @@ const defaultSummaryData = {
   },
 }
 
-function renderSnippetsPage() {
+function renderSnippetsPage(path = '/snippets') {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   const router = createMemoryRouter([{ path: '/snippets', element: <SnippetsPage /> }], {
-    initialEntries: ['/snippets'],
+    initialEntries: [path],
   })
   return render(
     <QueryClientProvider client={qc}>
@@ -100,7 +100,7 @@ describe('SnippetsPage', () => {
     vi.clearAllMocks()
 
     vi.mocked(useSnippets).mockReturnValue({
-      data: { snippets: mockSnippets, total: 2 },
+      data: { snippets: mockSnippets, pagination: { page: 1, per_page: 20, total: 2 } },
       isLoading: false,
     } as ReturnType<typeof useSnippets>)
 
@@ -225,12 +225,13 @@ describe('SnippetsPage', () => {
 
   it('muestra estado vacío cuando no hay snippets', () => {
     vi.mocked(useSnippets).mockReturnValue({
-      data: { snippets: [], total: 0 },
+      data: { snippets: [], pagination: { page: 1, per_page: 20, total: 0 } },
       isLoading: false,
     } as unknown as ReturnType<typeof useSnippets>)
 
     renderSnippetsPage()
     expect(screen.getByText('No hay snippets')).toBeInTheDocument()
+    expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument()
   })
 
   it('Export muestra fallback disabled cuando no tiene feature snippets_export', () => {
@@ -257,5 +258,50 @@ describe('SnippetsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Compartir' }))
     expect(screen.getByTestId('share-modal')).toHaveTextContent('2 recursos a compartir')
+  })
+
+  it('muestra el paginador cuando hay más de una página', () => {
+    vi.mocked(useSnippets).mockReturnValue({
+      data: { snippets: mockSnippets, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useSnippets>)
+
+    renderSnippetsPage()
+    expect(screen.getByText('Página 1 de 3')).toBeInTheDocument()
+  })
+
+  it('al hacer click en Siguiente pide la página siguiente a useSnippets', () => {
+    vi.mocked(useSnippets).mockReturnValue({
+      data: { snippets: mockSnippets, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useSnippets>)
+
+    renderSnippetsPage()
+    fireEvent.click(screen.getByLabelText('Página siguiente'))
+    expect(useSnippets).toHaveBeenLastCalledWith(expect.anything(), 2)
+  })
+
+  it('cambiar un filtro resetea la página a 1', () => {
+    vi.mocked(useSnippets).mockReturnValue({
+      data: { snippets: mockSnippets, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useSnippets>)
+
+    renderSnippetsPage('/snippets?page=2')
+    expect(useSnippets).toHaveBeenLastCalledWith(expect.anything(), 2)
+
+    const searchInput = screen.getByPlaceholderText('Buscar snippets...')
+    fireEvent.change(searchInput, { target: { value: 'useEffect' } })
+    expect(useSnippets).toHaveBeenLastCalledWith(expect.anything(), 1)
+  })
+
+  it('no muestra el paginador cuando total es 0', () => {
+    vi.mocked(useSnippets).mockReturnValue({
+      data: { snippets: mockSnippets, pagination: { page: 1, per_page: 20, total: 0 } },
+      isLoading: false,
+    } as ReturnType<typeof useSnippets>)
+
+    renderSnippetsPage()
+    expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument()
   })
 })

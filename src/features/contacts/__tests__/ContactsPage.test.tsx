@@ -84,12 +84,12 @@ const defaultSummaryData = {
   },
 }
 
-function renderContactsPage() {
+function renderContactsPage(path = '/contacts') {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   const router = createMemoryRouter([{ path: '/contacts', element: <ContactsPage /> }], {
-    initialEntries: ['/contacts'],
+    initialEntries: [path],
   })
   return render(
     <QueryClientProvider client={qc}>
@@ -103,7 +103,7 @@ describe('ContactsPage', () => {
     vi.clearAllMocks()
 
     vi.mocked(useContacts).mockReturnValue({
-      data: { contacts: mockContacts, total: 2 },
+      data: { contacts: mockContacts, pagination: { page: 1, per_page: 20, total: 2 } },
       isLoading: false,
     } as ReturnType<typeof useContacts>)
 
@@ -237,12 +237,13 @@ describe('ContactsPage', () => {
 
   it('muestra estado vacío cuando no hay contactos', () => {
     vi.mocked(useContacts).mockReturnValue({
-      data: { contacts: [], total: 0 },
+      data: { contacts: [], pagination: { page: 1, per_page: 20, total: 0 } },
       isLoading: false,
     } as unknown as ReturnType<typeof useContacts>)
 
     renderContactsPage()
     expect(screen.getByText('No hay contactos')).toBeInTheDocument()
+    expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument()
   })
 
   it('Export muestra fallback disabled cuando no tiene feature contact_export', () => {
@@ -269,5 +270,50 @@ describe('ContactsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Compartir' }))
     expect(screen.getByTestId('share-modal')).toHaveTextContent('2 recursos a compartir')
+  })
+
+  it('muestra el paginador cuando hay más de una página', () => {
+    vi.mocked(useContacts).mockReturnValue({
+      data: { contacts: mockContacts, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useContacts>)
+
+    renderContactsPage()
+    expect(screen.getByText('Página 1 de 3')).toBeInTheDocument()
+  })
+
+  it('al hacer click en Siguiente pide la página siguiente a useContacts', () => {
+    vi.mocked(useContacts).mockReturnValue({
+      data: { contacts: mockContacts, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useContacts>)
+
+    renderContactsPage()
+    fireEvent.click(screen.getByLabelText('Página siguiente'))
+    expect(useContacts).toHaveBeenLastCalledWith(expect.anything(), 2)
+  })
+
+  it('cambiar un filtro resetea la página a 1', () => {
+    vi.mocked(useContacts).mockReturnValue({
+      data: { contacts: mockContacts, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useContacts>)
+
+    renderContactsPage('/contacts?page=2')
+    expect(useContacts).toHaveBeenLastCalledWith(expect.anything(), 2)
+
+    const searchInput = screen.getByPlaceholderText('Buscar contactos...')
+    fireEvent.change(searchInput, { target: { value: 'Ana' } })
+    expect(useContacts).toHaveBeenLastCalledWith(expect.anything(), 1)
+  })
+
+  it('no muestra el paginador cuando total es 0', () => {
+    vi.mocked(useContacts).mockReturnValue({
+      data: { contacts: mockContacts, pagination: { page: 1, per_page: 20, total: 0 } },
+      isLoading: false,
+    } as ReturnType<typeof useContacts>)
+
+    renderContactsPage()
+    expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument()
   })
 })

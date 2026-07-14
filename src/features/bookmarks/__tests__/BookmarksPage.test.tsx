@@ -77,12 +77,12 @@ const defaultSummaryData = {
   },
 }
 
-function renderBookmarksPage() {
+function renderBookmarksPage(path = '/bookmarks') {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   const router = createMemoryRouter([{ path: '/bookmarks', element: <BookmarksPage /> }], {
-    initialEntries: ['/bookmarks'],
+    initialEntries: [path],
   })
   return render(
     <QueryClientProvider client={qc}>
@@ -96,7 +96,7 @@ describe('BookmarksPage', () => {
     vi.clearAllMocks()
 
     vi.mocked(useBookmarks).mockReturnValue({
-      data: { bookmarks: mockBookmarks, total: 2 },
+      data: { bookmarks: mockBookmarks, pagination: { page: 1, per_page: 20, total: 2 } },
       isLoading: false,
     } as ReturnType<typeof useBookmarks>)
 
@@ -220,12 +220,13 @@ describe('BookmarksPage', () => {
 
   it('muestra estado vacío cuando no hay bookmarks', () => {
     vi.mocked(useBookmarks).mockReturnValue({
-      data: { bookmarks: [], total: 0 },
+      data: { bookmarks: [], pagination: { page: 1, per_page: 20, total: 0 } },
       isLoading: false,
     } as unknown as ReturnType<typeof useBookmarks>)
 
     renderBookmarksPage()
     expect(screen.getByText('No hay bookmarks')).toBeInTheDocument()
+    expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument()
   })
 
   it('Export muestra fallback disabled cuando no tiene feature bookmarks_export', () => {
@@ -239,5 +240,50 @@ describe('BookmarksPage', () => {
     renderBookmarksPage()
     const exportBtn = screen.getByRole('button', { name: /Exportar/i })
     expect(exportBtn).toBeDisabled()
+  })
+
+  it('muestra el paginador cuando hay más de una página', () => {
+    vi.mocked(useBookmarks).mockReturnValue({
+      data: { bookmarks: mockBookmarks, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useBookmarks>)
+
+    renderBookmarksPage()
+    expect(screen.getByText('Página 1 de 3')).toBeInTheDocument()
+  })
+
+  it('al hacer click en Siguiente pide la página siguiente a useBookmarks', () => {
+    vi.mocked(useBookmarks).mockReturnValue({
+      data: { bookmarks: mockBookmarks, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useBookmarks>)
+
+    renderBookmarksPage()
+    fireEvent.click(screen.getByLabelText('Página siguiente'))
+    expect(useBookmarks).toHaveBeenLastCalledWith(expect.anything(), 2)
+  })
+
+  it('cambiar un filtro resetea la página a 1', () => {
+    vi.mocked(useBookmarks).mockReturnValue({
+      data: { bookmarks: mockBookmarks, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useBookmarks>)
+
+    renderBookmarksPage('/bookmarks?page=2')
+    expect(useBookmarks).toHaveBeenLastCalledWith(expect.anything(), 2)
+
+    const searchInput = screen.getByPlaceholderText('Buscar bookmarks...')
+    fireEvent.change(searchInput, { target: { value: 'React' } })
+    expect(useBookmarks).toHaveBeenLastCalledWith(expect.anything(), 1)
+  })
+
+  it('no muestra el paginador cuando total es 0', () => {
+    vi.mocked(useBookmarks).mockReturnValue({
+      data: { bookmarks: mockBookmarks, pagination: { page: 1, per_page: 20, total: 0 } },
+      isLoading: false,
+    } as ReturnType<typeof useBookmarks>)
+
+    renderBookmarksPage()
+    expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument()
   })
 })

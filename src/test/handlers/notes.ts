@@ -6,14 +6,21 @@ const mockNote = {
   id: 'n-1',
   title: 'Nota de prueba',
   content: 'Contenido',
-  category: 'work',
-  pinned: false,
+  category: null,
+  tags: [],
+  is_pinned: false,
+  is_shared: false,
+  shared_by_name: null,
   created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
 }
 
 export const notesHandlers = [
   http.get(`${API}/app/notes/`, () =>
-    HttpResponse.json({ results: [mockNote], count: 1 }),
+    HttpResponse.json({
+      notes: [mockNote],
+      pagination: { page: 1, per_page: 20, total: 1 },
+    }),
   ),
 
   http.post(`${API}/app/notes/`, () => HttpResponse.json(mockNote, { status: 201 })),

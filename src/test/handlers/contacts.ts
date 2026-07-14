@@ -13,7 +13,10 @@ const mockContact = {
 
 export const contactsHandlers = [
   http.get(`${API}/app/contacts/`, () =>
-    HttpResponse.json({ results: [mockContact], count: 1 }),
+    HttpResponse.json({
+      contacts: [mockContact],
+      pagination: { page: 1, per_page: 20, total: 1 },
+    }),
   ),
 
   http.post(`${API}/app/contacts/`, () => HttpResponse.json(mockContact, { status: 201 })),

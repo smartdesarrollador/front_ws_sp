@@ -24,6 +24,12 @@ export interface BookmarkFiltersState {
   tag: string
 }
 
+export interface BookmarkPagination {
+  page: number
+  per_page: number
+  total: number
+}
+
 export interface CreateBookmarkRequest {
   title: string
   url: string

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CheckSquare, Pencil, Trash2 } from 'lucide-react'
-import type { Task } from '../types'
+import Pagination from '@/components/shared/Pagination'
+import type { Task, TaskPagination } from '../types'
 import { PriorityBadge } from './PriorityBadge'
 import { TaskStatusBadge } from './TaskStatusBadge'
 
@@ -9,6 +10,8 @@ interface Props {
   isLoading: boolean
   onEdit: (task: Task) => void
   onDelete: (id: string) => void
+  pagination?: TaskPagination
+  onPageChange: (page: number) => void
 }
 
 const HEADERS = ['Título', 'Prioridad', 'Estado', 'Fecha límite', 'Comentarios', 'Acciones']
@@ -74,7 +77,14 @@ function TaskRow({
   )
 }
 
-export function TaskListView({ tasks, isLoading, onEdit, onDelete }: Props) {
+export function TaskListView({
+  tasks,
+  isLoading,
+  onEdit,
+  onDelete,
+  pagination,
+  onPageChange,
+}: Props) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm" aria-label="Tareas">
@@ -111,6 +121,14 @@ export function TaskListView({ tasks, isLoading, onEdit, onDelete }: Props) {
           <CheckSquare className="w-12 h-12 mb-3" />
           <p className="text-sm">No hay tareas</p>
         </div>
+      )}
+      {!isLoading && pagination && (
+        <Pagination
+          page={pagination.page}
+          perPage={pagination.per_page}
+          total={pagination.total}
+          onPageChange={onPageChange}
+        />
       )}
     </div>
   )

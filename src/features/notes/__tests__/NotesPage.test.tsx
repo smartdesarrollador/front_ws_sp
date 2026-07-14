@@ -71,12 +71,12 @@ const mockDeleteMutate = vi.fn()
 const mockCreateMutate = vi.fn()
 const mockUpdateMutate = vi.fn()
 
-function renderNotesPage() {
+function renderNotesPage(path = '/notes') {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   const router = createMemoryRouter([{ path: '/notes', element: <NotesPage /> }], {
-    initialEntries: ['/notes'],
+    initialEntries: [path],
   })
   return render(
     <QueryClientProvider client={qc}>
@@ -90,7 +90,7 @@ describe('NotesPage', () => {
     vi.clearAllMocks()
 
     vi.mocked(useNotes).mockReturnValue({
-      data: { notes: mockNotes, total: 3 },
+      data: { notes: mockNotes, pagination: { page: 1, per_page: 20, total: 2 } },
       isLoading: false,
     } as ReturnType<typeof useNotes>)
 
@@ -256,7 +256,7 @@ describe('NotesPage', () => {
 
   it('muestra estado vacío cuando no hay notas', () => {
     vi.mocked(useNotes).mockReturnValue({
-      data: { notes: [], total: 0 },
+      data: { notes: [], pagination: { page: 1, per_page: 20, total: 0 } },
       isLoading: false,
     } as unknown as ReturnType<typeof useNotes>)
 
@@ -275,5 +275,77 @@ describe('NotesPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Compartir' }))
     expect(screen.getByTestId('share-modal')).toHaveTextContent('2 recursos a compartir')
+  })
+
+  it('muestra el paginador cuando hay más de una página de no-fijadas', () => {
+    vi.mocked(useNotes).mockReturnValue({
+      data: { notes: mockNotes, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useNotes>)
+
+    renderNotesPage()
+    expect(screen.getByText('Página 1 de 3')).toBeInTheDocument()
+  })
+
+  it('no muestra el paginador cuando "Solo fijadas" está activo', () => {
+    vi.mocked(useNotes).mockReturnValue({
+      data: { notes: mockNotes, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useNotes>)
+
+    renderNotesPage()
+    expect(screen.getByText('Página 1 de 3')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Solo fijadas'))
+    expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument()
+  })
+
+  it('al hacer click en Siguiente pide la página siguiente a useNotes', () => {
+    vi.mocked(useNotes).mockReturnValue({
+      data: { notes: mockNotes, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useNotes>)
+
+    renderNotesPage()
+    fireEvent.click(screen.getByLabelText('Página siguiente'))
+    expect(useNotes).toHaveBeenLastCalledWith(expect.anything(), 2)
+  })
+
+  it('cambiar un filtro resetea la página a 1', () => {
+    vi.mocked(useNotes).mockReturnValue({
+      data: { notes: mockNotes, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as ReturnType<typeof useNotes>)
+
+    renderNotesPage('/notes?page=2')
+    expect(useNotes).toHaveBeenLastCalledWith(expect.anything(), 2)
+
+    const searchInput = screen.getByPlaceholderText('Buscar notas...')
+    fireEvent.change(searchInput, { target: { value: 'Grocery' } })
+    expect(useNotes).toHaveBeenLastCalledWith(expect.anything(), 1)
+  })
+
+  it('las notas fijadas siguen completas aunque haya más de 20', () => {
+    const manyPinned: Note[] = Array.from({ length: 25 }, (_, i) => ({
+      id: `pinned-${i}`,
+      title: `Pinned ${i}`,
+      content: '',
+      category: null,
+      tags: [],
+      is_pinned: true,
+      is_shared: false,
+      shared_by_name: null,
+      created_at: '2026-03-01T10:00:00Z',
+      updated_at: '2026-03-01T10:00:00Z',
+    }))
+
+    vi.mocked(useNotes).mockReturnValue({
+      data: { notes: manyPinned, pagination: { page: 1, per_page: 20, total: 0 } },
+      isLoading: false,
+    } as ReturnType<typeof useNotes>)
+
+    renderNotesPage()
+    manyPinned.forEach((note) => {
+      expect(screen.getByText(note.title)).toBeInTheDocument()
+    })
   })
 })

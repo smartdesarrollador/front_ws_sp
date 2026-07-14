@@ -18,9 +18,9 @@ describe('MSW Handlers', () => {
     expect(res.data.features.analytics).toBe(true)
   })
 
-  it('GET /app/tasks/ returns results array', async () => {
+  it('GET /app/tasks/ returns tasks array', async () => {
     const res = await client.get('/app/tasks/')
-    expect(Array.isArray(res.data.results)).toBe(true)
+    expect(Array.isArray(res.data.tasks)).toBe(true)
   })
 
   it('POST /auth/refresh-token returns refreshed token', async () => {

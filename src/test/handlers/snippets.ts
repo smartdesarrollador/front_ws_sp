@@ -12,7 +12,10 @@ const mockSnippet = {
 
 export const snippetsHandlers = [
   http.get(`${API}/app/snippets/`, () =>
-    HttpResponse.json({ results: [mockSnippet], count: 1 }),
+    HttpResponse.json({
+      snippets: [mockSnippet],
+      pagination: { page: 1, per_page: 20, total: 1 },
+    }),
   ),
 
   http.post(`${API}/app/snippets/`, () => HttpResponse.json(mockSnippet, { status: 201 })),

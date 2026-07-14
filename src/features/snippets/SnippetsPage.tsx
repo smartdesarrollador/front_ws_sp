@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, Code2, CheckSquare } from 'lucide-react'
+import { apiClient } from '@/lib/axios'
 import { useSnippets } from './hooks/useSnippets'
 import { useDeleteSnippet } from './hooks/useDeleteSnippet'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
 import { useSnippetTagSuggestions } from './hooks/useSnippetTagSuggestions'
 import ExportMenu, { type ExportFormat } from '@/components/shared/ExportMenu'
+import Pagination from '@/components/shared/Pagination'
 import { toJSON, toCodeZip, downloadBlob } from '@/lib/export'
 import { SnippetFilters, EMPTY_FILTERS } from './components/SnippetFilters'
 import { SnippetCard } from './components/SnippetCard'
@@ -14,20 +17,27 @@ import { useBulkSelection } from '@/features/sharing/hooks/useBulkSelection'
 import { BulkActionBar } from '@/features/sharing/components/BulkActionBar'
 import type { CodeSnippet, SnippetFiltersState } from './types'
 
+interface AllSnippetsResponse {
+  snippets: CodeSnippet[]
+}
+
 export default function SnippetsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [showModal, setShowModal] = useState(false)
   const [snippetToEdit, setSnippetToEdit] = useState<CodeSnippet | null>(null)
   const [shareResources, setShareResources] = useState<{ id: string; title: string }[] | null>(null)
   const [filters, setFilters] = useState<SnippetFiltersState>(EMPTY_FILTERS)
+  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1)
   const bulk = useBulkSelection()
 
-  const { data, isLoading } = useSnippets(filters)
+  const { data, isLoading } = useSnippets(filters, page)
   const deleteSnippet = useDeleteSnippet()
   const { data: summaryData } = useDashboardSummary()
   const { data: tagSuggestions } = useSnippetTagSuggestions()
 
   const allSnippets = data?.snippets ?? []
-  const total = data?.total ?? 0
+  const pagination = data?.pagination
+  const total = pagination?.total ?? 0
 
   // Frontend filtering
   const filteredSnippets = allSnippets.filter((s) => {
@@ -43,6 +53,40 @@ export default function SnippetsPage() {
     if (filters.tag && !s.tags.includes(filters.tag)) return false
     return true
   })
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (newPage <= 1) next.delete('page')
+      else next.set('page', String(newPage))
+      return next
+    })
+  }
+
+  const handleFiltersChange = (f: SnippetFiltersState) => {
+    setFilters(f)
+    handlePageChange(1)
+  }
+
+  const fetchAllSnippetsForExport = async () => {
+    const params: Record<string, string> = {}
+    if (filters.search) params.search = filters.search
+    if (filters.language) params.language = filters.language
+    if (filters.tag) params.tag = filters.tag
+    const { data: allData } = await apiClient.get<AllSnippetsResponse>('/app/snippets/', { params })
+    return allData.snippets.filter((s) => {
+      if (filters.search) {
+        const q = filters.search.toLowerCase()
+        const matches =
+          s.title.toLowerCase().includes(q) ||
+          s.code.toLowerCase().includes(q) ||
+          (s.description ?? '').toLowerCase().includes(q)
+        if (!matches) return false
+      }
+      return true
+    })
+  }
 
   // Plan limit banner
   const snippetsCount = summaryData?.usage.snippets ?? 0
@@ -80,8 +124,9 @@ export default function SnippetsPage() {
       id: 'zip',
       label: 'Archivos de código (.zip)',
       run: async () => {
+        const snippets = await fetchAllSnippetsForExport()
         const blob = await toCodeZip(
-          filteredSnippets.map((s) => ({ title: s.title, code: s.code, language: s.language })),
+          snippets.map((s) => ({ title: s.title, code: s.code, language: s.language })),
         )
         downloadBlob(blob, 'snippets.zip')
       },
@@ -89,8 +134,10 @@ export default function SnippetsPage() {
     {
       id: 'json',
       label: 'JSON',
-      run: () =>
-        downloadBlob(new Blob([toJSON(filteredSnippets)], { type: 'application/json' }), 'snippets.json'),
+      run: async () => {
+        const snippets = await fetchAllSnippetsForExport()
+        downloadBlob(new Blob([toJSON(snippets)], { type: 'application/json' }), 'snippets.json')
+      },
     },
   ]
 
@@ -136,7 +183,7 @@ export default function SnippetsPage() {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <SnippetFilters
           filters={filters}
-          onChange={setFilters}
+          onChange={handleFiltersChange}
           totalCount={total}
           tags={tagSuggestions ?? []}
         />
@@ -193,6 +240,15 @@ export default function SnippetsPage() {
             />
           ))}
         </div>
+      )}
+
+      {!isLoading && pagination && (
+        <Pagination
+          page={pagination.page}
+          perPage={pagination.per_page}
+          total={pagination.total}
+          onPageChange={handlePageChange}
+        />
       )}
 
       {/* Modals */}

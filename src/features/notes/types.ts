@@ -25,6 +25,12 @@ export interface NoteFiltersState {
   tag: string
 }
 
+export interface NotePagination {
+  page: number
+  per_page: number
+  total: number
+}
+
 export interface CreateNoteRequest {
   title: string
   content: string
