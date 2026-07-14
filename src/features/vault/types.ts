@@ -20,6 +20,12 @@ export interface VaultItemsFilters {
   item_type?: VaultItemType | ''
 }
 
+export interface VaultItemsPagination {
+  page: number
+  per_page: number
+  total: number
+}
+
 export interface CreateVaultItemRequest {
   title: string
   item_type: VaultItemType

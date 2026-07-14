@@ -44,12 +44,12 @@ const mockSharedItems: SharedVaultItem[] = [
   },
 ]
 
-function renderPage() {
+function renderPage(path = '/vault') {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   const router = createMemoryRouter([{ path: '/vault', element: <VaultPage /> }], {
-    initialEntries: ['/vault'],
+    initialEntries: [path],
   })
   return render(
     <QueryClientProvider client={qc}>
@@ -75,7 +75,7 @@ beforeEach(() => {
     isLoading: false,
   })
   vi.mocked(useVaultItems).mockReturnValue({
-    data: { items: mockItems, total: 1 },
+    data: { items: mockItems, pagination: { page: 1, per_page: 20, total: 1 } },
     isLoading: false,
   } as unknown as ReturnType<typeof useVaultItems>)
   vi.mocked(useLockVault).mockReturnValue({ mutate: vi.fn() } as unknown as ReturnType<typeof useLockVault>)
@@ -191,5 +191,75 @@ describe('VaultPage', () => {
     renderPage()
     fireEvent.click(screen.getByLabelText('Ver'))
     expect(screen.getByText('Compartido por Otro Usuario · solo lectura')).toBeInTheDocument()
+  })
+
+  it('muestra el paginador cuando hay más de una página de ítems propios', () => {
+    setStatus(true)
+    useVaultStore.getState().unlock('tok', 900)
+    vi.mocked(useVaultItems).mockReturnValue({
+      data: { items: mockItems, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useVaultItems>)
+
+    renderPage()
+    expect(screen.getByText('Página 1 de 3')).toBeInTheDocument()
+  })
+
+  it('al hacer click en Siguiente pide la página siguiente a useVaultItems', () => {
+    setStatus(true)
+    useVaultStore.getState().unlock('tok', 900)
+    vi.mocked(useVaultItems).mockReturnValue({
+      data: { items: mockItems, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useVaultItems>)
+
+    renderPage()
+    fireEvent.click(screen.getByLabelText('Página siguiente'))
+    expect(useVaultItems).toHaveBeenLastCalledWith(expect.anything(), 2, expect.anything())
+  })
+
+  it('lee la página inicial desde la URL ?page=2', () => {
+    setStatus(true)
+    useVaultStore.getState().unlock('tok', 900)
+    vi.mocked(useVaultItems).mockReturnValue({
+      data: { items: mockItems, pagination: { page: 2, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useVaultItems>)
+
+    renderPage('/vault?page=2')
+    expect(useVaultItems).toHaveBeenLastCalledWith(expect.anything(), 2, expect.anything())
+  })
+
+  it('no muestra el paginador cuando no hay ítems propios (total 0)', () => {
+    setStatus(true)
+    useVaultStore.getState().unlock('tok', 900)
+    vi.mocked(useVaultItems).mockReturnValue({
+      data: { items: [], pagination: { page: 1, per_page: 20, total: 0 } },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useVaultItems>)
+    vi.mocked(useSharedVaultItems).mockReturnValue({
+      data: mockSharedItems,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useSharedVaultItems>)
+
+    renderPage()
+    expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument()
+  })
+
+  it('el contador del header suma pagination.total (no items.length) más los compartidos', () => {
+    setStatus(true)
+    useVaultStore.getState().unlock('tok', 900)
+    vi.mocked(useVaultItems).mockReturnValue({
+      data: { items: mockItems, pagination: { page: 1, per_page: 20, total: 45 } },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useVaultItems>)
+    vi.mocked(useSharedVaultItems).mockReturnValue({
+      data: mockSharedItems,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useSharedVaultItems>)
+
+    renderPage()
+    // 45 (pagination.total) + 1 (shared), not mockItems.length (1) + 1.
+    expect(screen.getByText('46')).toBeInTheDocument()
   })
 })

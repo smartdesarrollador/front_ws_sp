@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { KeyRound, Lock, Plus, ShieldCheck } from 'lucide-react'
 import FeatureGate from '@/components/shared/FeatureGate'
 import UpgradePrompt from '@/components/shared/UpgradePrompt'
+import Pagination from '@/components/shared/Pagination'
 import { useVaultStore } from '@/store/vaultStore'
 import { useVaultStatus } from './hooks/useVaultStatus'
 import { useVaultItems } from './hooks/useVaultItems'
@@ -36,15 +37,17 @@ export default function VaultPage() {
 function VaultContent() {
   const isUnlockedFn = useVaultStore((s) => s.isUnlocked)
   const expiresAt = useVaultStore((s) => s.expiresAt)
+  const [searchParams, setSearchParams] = useSearchParams()
   const [, setTick] = useState(0)
   const [showModal, setShowModal] = useState(false)
   const [itemToEdit, setItemToEdit] = useState<VaultItemRevealed | null>(null)
   const [itemToShare, setItemToShare] = useState<VaultItem | null>(null)
   const [sharedItemToView, setSharedItemToView] = useState<SharedVaultItemRevealed | null>(null)
+  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1)
 
   const { data: status, isLoading: loadingStatus } = useVaultStatus()
   const unlocked = isUnlockedFn()
-  const { data: itemsData, isLoading: loadingItems } = useVaultItems({}, Boolean(status?.is_configured))
+  const { data: itemsData, isLoading: loadingItems } = useVaultItems({}, page, Boolean(status?.is_configured))
   const { data: sharedItems = [], isLoading: loadingShared } = useSharedVaultItems(unlocked)
   const lockVault = useLockVault()
   const revealItem = useRevealVaultItem()
@@ -52,6 +55,17 @@ function VaultContent() {
   const revealSharedItem = useRevealSharedVaultItem()
 
   const items = itemsData?.items ?? []
+  const pagination = itemsData?.pagination
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (newPage <= 1) next.delete('page')
+      else next.set('page', String(newPage))
+      return next
+    })
+  }
 
   // Re-render when the unlock token expires so the UnlockPrompt reappears.
   useEffect(() => {
@@ -116,7 +130,7 @@ function VaultContent() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Bóveda</h1>
           <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-            {items.length + sharedItems.length}
+            {(pagination?.total ?? 0) + sharedItems.length}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -186,6 +200,15 @@ function VaultContent() {
           </table>
         )}
       </div>
+
+      {!loadingItems && pagination && (
+        <Pagination
+          page={pagination.page}
+          perPage={pagination.per_page}
+          total={pagination.total}
+          onPageChange={handlePageChange}
+        />
+      )}
 
       {showModal && (
         <VaultItemModal item={itemToEdit} onClose={() => setShowModal(false)} />
