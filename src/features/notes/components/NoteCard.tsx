@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { Pin, Pencil, Trash2, Share2 } from 'lucide-react'
+import { Pin, Pencil, Trash2, Share2, Copy, Check, Eye } from 'lucide-react'
 import type { Note } from '../types'
 import { CategoryBadge } from './CategoryBadge'
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 
 interface Props {
   note: Note
   onEdit: (note: Note) => void
   onDelete: (id: string) => void
   onShare: (note: Note) => void
+  onView: (note: Note) => void
   selectionMode?: boolean
   selected?: boolean
   onToggleSelect?: (id: string) => void
@@ -18,11 +20,13 @@ export function NoteCard({
   onEdit,
   onDelete,
   onShare,
+  onView,
   selectionMode = false,
   selected = false,
   onToggleSelect,
 }: Props) {
   const [confirming, setConfirming] = useState(false)
+  const [copied, copy] = useCopyToClipboard()
 
   const handleDelete = () => {
     if (confirming) {
@@ -31,6 +35,10 @@ export function NoteCard({
     } else {
       setConfirming(true)
     }
+  }
+
+  const handleCopy = () => {
+    copy(note.content)
   }
 
   const borderColor = note.category?.color ?? '#d1d5db'
@@ -117,6 +125,24 @@ export function NoteCard({
           {/* Action buttons — visible on hover, hidden in selection mode */}
           {!selectionMode && (
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => onView(note)}
+                aria-label="Ver nota"
+                className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={handleCopy}
+                aria-label="Copiar contenido"
+                className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+              >
+                {copied ? (
+                  <Check className="w-3.5 h-3.5 text-green-500" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
+              </button>
               <button
                 onClick={() => onShare(note)}
                 aria-label="Compartir nota"

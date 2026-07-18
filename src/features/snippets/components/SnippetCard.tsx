@@ -1,13 +1,14 @@
-import { useState } from 'react'
-import { Star, Pencil, Trash2, Copy, Check, Share2 } from 'lucide-react'
+import { Star, Pencil, Trash2, Copy, Check, Share2, Eye } from 'lucide-react'
 import type { CodeSnippet } from '../types'
 import LanguageBadge from './LanguageBadge'
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 
 interface Props {
   snippet: CodeSnippet
   onEdit: (s: CodeSnippet) => void
   onDelete: (id: string) => void
   onShare: (s: CodeSnippet) => void
+  onView: (s: CodeSnippet) => void
   selectionMode?: boolean
   selected?: boolean
   onToggleSelect?: (id: string) => void
@@ -18,17 +19,15 @@ export function SnippetCard({
   onEdit,
   onDelete,
   onShare,
+  onView,
   selectionMode = false,
   selected = false,
   onToggleSelect,
 }: Props) {
-  const [copied, setCopied] = useState(false)
+  const [copied, copy] = useCopyToClipboard()
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(snippet.code).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
+    copy(snippet.code)
   }
 
   const handleDelete = () => {
@@ -85,6 +84,13 @@ export function SnippetCard({
         {/* Action buttons — visible on hover, hidden in selection mode */}
         {!selectionMode && (
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            <button
+              onClick={() => onView(snippet)}
+              aria-label="Ver snippet"
+              className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+            >
+              <Eye className="w-3.5 h-3.5" />
+            </button>
             <button
               onClick={handleCopy}
               aria-label="Copiar código"

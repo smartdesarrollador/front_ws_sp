@@ -17,6 +17,7 @@ import { parseNotesFile } from '@/lib/import'
 import { NoteFilters } from './components/NoteFilters'
 import { NoteCard } from './components/NoteCard'
 import { NoteModal } from './components/NoteModal'
+import { NoteViewModal } from './components/NoteViewModal'
 import { ManageCategoriesModal } from './components/ManageCategoriesModal'
 import { ShareResourceModal } from '@/features/sharing/components/ShareResourceModal'
 import { useBulkSelection } from '@/features/sharing/hooks/useBulkSelection'
@@ -34,6 +35,7 @@ export default function NotesPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [showCategoriesModal, setShowCategoriesModal] = useState(false)
   const [editingNote, setEditingNote] = useState<Note | null>(null)
+  const [viewingNote, setViewingNote] = useState<Note | null>(null)
   const [shareResources, setShareResources] = useState<{ id: string; title: string }[] | null>(null)
   const [filters, setFilters] = useState<NoteFiltersState>(EMPTY_FILTERS)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -116,6 +118,14 @@ export default function NotesPage() {
   const handleCloseModal = () => {
     setModalOpen(false)
     setEditingNote(null)
+  }
+
+  const handleView = (note: Note) => {
+    setViewingNote(note)
+  }
+
+  const handleCloseViewModal = () => {
+    setViewingNote(null)
   }
 
   const handleBulkShare = () => {
@@ -292,6 +302,7 @@ export default function NotesPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onShare={(n) => setShareResources([{ id: n.id, title: n.title }])}
+                onView={handleView}
                 selectionMode={bulk.isSelecting}
                 selected={bulk.selectedIds.has(note.id)}
                 onToggleSelect={bulk.toggleId}
@@ -364,6 +375,7 @@ export default function NotesPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onShare={(n) => setShareResources([{ id: n.id, title: n.title }])}
+                onView={handleView}
                 selectionMode={bulk.isSelecting}
                 selected={bulk.selectedIds.has(note.id)}
                 onToggleSelect={bulk.toggleId}
@@ -383,6 +395,7 @@ export default function NotesPage() {
       </div>
 
       <NoteModal note={editingNote} open={modalOpen} onClose={handleCloseModal} />
+      <NoteViewModal note={viewingNote} open={!!viewingNote} onClose={handleCloseViewModal} />
       {showCategoriesModal && (
         <ManageCategoriesModal onClose={() => setShowCategoriesModal(false)} />
       )}

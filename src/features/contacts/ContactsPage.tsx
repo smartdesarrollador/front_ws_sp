@@ -17,6 +17,7 @@ import { parseContacts } from '@/lib/import'
 import { ContactFilters, EMPTY_FILTERS } from './components/ContactFilters'
 import { ContactCard } from './components/ContactCard'
 import { ContactModal } from './components/ContactModal'
+import { ContactViewModal } from './components/ContactViewModal'
 import { ManageGroupsModal } from './components/ManageGroupsModal'
 import { ShareResourceModal } from '@/features/sharing/components/ShareResourceModal'
 import { useBulkSelection } from '@/features/sharing/hooks/useBulkSelection'
@@ -32,6 +33,7 @@ export default function ContactsPage() {
   const [showModal, setShowModal] = useState(false)
   const [showGroupsModal, setShowGroupsModal] = useState(false)
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null)
+  const [viewingContact, setViewingContact] = useState<Contact | null>(null)
   const [shareResources, setShareResources] = useState<{ id: string; title: string }[] | null>(null)
   const [filters, setFilters] = useState<ContactFiltersState>(EMPTY_FILTERS)
   const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1)
@@ -111,6 +113,14 @@ export default function ContactsPage() {
   const handleCloseModal = () => {
     setShowModal(false)
     setContactToEdit(null)
+  }
+
+  const handleView = (contact: Contact) => {
+    setViewingContact(contact)
+  }
+
+  const handleCloseViewModal = () => {
+    setViewingContact(null)
   }
 
   const handleBulkShare = () => {
@@ -310,6 +320,7 @@ export default function ContactsPage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onShare={(c) => setShareResources([{ id: c.id, title: c.name }])}
+              onView={handleView}
               selectionMode={bulk.isSelecting}
               selected={bulk.selectedIds.has(contact.id)}
               onToggleSelect={bulk.toggleId}
@@ -329,6 +340,11 @@ export default function ContactsPage() {
 
       {/* Modals */}
       {showModal && <ContactModal contact={contactToEdit} onClose={handleCloseModal} />}
+      <ContactViewModal
+        contact={viewingContact}
+        open={!!viewingContact}
+        onClose={handleCloseViewModal}
+      />
       {showGroupsModal && <ManageGroupsModal onClose={() => setShowGroupsModal(false)} />}
       {shareResources && (
         <ShareResourceModal

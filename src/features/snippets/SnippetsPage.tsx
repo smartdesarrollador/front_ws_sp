@@ -12,6 +12,7 @@ import { toJSON, toCodeZip, downloadBlob } from '@/lib/export'
 import { SnippetFilters, EMPTY_FILTERS } from './components/SnippetFilters'
 import { SnippetCard } from './components/SnippetCard'
 import { SnippetModal } from './components/SnippetModal'
+import { SnippetViewModal } from './components/SnippetViewModal'
 import { ShareResourceModal } from '@/features/sharing/components/ShareResourceModal'
 import { useBulkSelection } from '@/features/sharing/hooks/useBulkSelection'
 import { BulkActionBar } from '@/features/sharing/components/BulkActionBar'
@@ -25,6 +26,7 @@ export default function SnippetsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [showModal, setShowModal] = useState(false)
   const [snippetToEdit, setSnippetToEdit] = useState<CodeSnippet | null>(null)
+  const [viewingSnippet, setViewingSnippet] = useState<CodeSnippet | null>(null)
   const [shareResources, setShareResources] = useState<{ id: string; title: string }[] | null>(null)
   const [filters, setFilters] = useState<SnippetFiltersState>(EMPTY_FILTERS)
   const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1)
@@ -105,6 +107,14 @@ export default function SnippetsPage() {
   const handleCloseModal = () => {
     setShowModal(false)
     setSnippetToEdit(null)
+  }
+
+  const handleView = (snippet: CodeSnippet) => {
+    setViewingSnippet(snippet)
+  }
+
+  const handleCloseViewModal = () => {
+    setViewingSnippet(null)
   }
 
   const handleBulkShare = () => {
@@ -234,6 +244,7 @@ export default function SnippetsPage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onShare={(s) => setShareResources([{ id: s.id, title: s.title }])}
+              onView={handleView}
               selectionMode={bulk.isSelecting}
               selected={bulk.selectedIds.has(snippet.id)}
               onToggleSelect={bulk.toggleId}
@@ -253,6 +264,11 @@ export default function SnippetsPage() {
 
       {/* Modals */}
       {showModal && <SnippetModal snippet={snippetToEdit} onClose={handleCloseModal} />}
+      <SnippetViewModal
+        snippet={viewingSnippet}
+        open={!!viewingSnippet}
+        onClose={handleCloseViewModal}
+      />
       {shareResources && (
         <ShareResourceModal
           resourceType="snippet"

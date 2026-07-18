@@ -1,12 +1,14 @@
-import { Pencil, Trash2, Mail, Phone, Building2, Share2 } from 'lucide-react'
+import { Pencil, Trash2, Mail, Phone, Building2, Share2, Copy, Check, Eye } from 'lucide-react'
 import type { Contact } from '../types'
 import { GroupBadge } from './GroupBadge'
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 
 interface Props {
   contact: Contact
   onEdit: (c: Contact) => void
   onDelete: (id: string) => void
   onShare: (c: Contact) => void
+  onView: (c: Contact) => void
   selectionMode?: boolean
   selected?: boolean
   onToggleSelect?: (id: string) => void
@@ -33,14 +35,21 @@ export function ContactCard({
   onEdit,
   onDelete,
   onShare,
+  onView,
   selectionMode = false,
   selected = false,
   onToggleSelect,
 }: Props) {
+  const [copied, copy] = useCopyToClipboard()
+
   const handleDelete = () => {
     if (window.confirm(`¿Eliminar el contacto "${contact.name}"?`)) {
       onDelete(contact.id)
     }
+  }
+
+  const handleCopy = () => {
+    copy(contact.email)
   }
 
   const avatarColor = getAvatarColor(contact.name)
@@ -88,6 +97,24 @@ export function ContactCard({
             {/* Action buttons — visible on hover, hidden in selection mode */}
             {!selectionMode && (
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                <button
+                  onClick={() => onView(contact)}
+                  aria-label="Ver contacto"
+                  className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleCopy}
+                  aria-label="Copiar email"
+                  className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+                >
+                  {copied ? (
+                    <Check className="w-3.5 h-3.5 text-green-500" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
                 <button
                   onClick={() => onShare(contact)}
                   aria-label="Compartir contacto"

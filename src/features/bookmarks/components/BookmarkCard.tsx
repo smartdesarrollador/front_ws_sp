@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { ExternalLink, Star, Pencil, Trash2 } from 'lucide-react'
+import { ExternalLink, Star, Pencil, Trash2, Copy, Check, Eye } from 'lucide-react'
 import type { Bookmark } from '../types'
 import { CollectionBadge } from './CollectionBadge'
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 
 interface Props {
   bookmark: Bookmark
   onEdit: (b: Bookmark) => void
   onDelete: (id: string) => void
+  onView: (b: Bookmark) => void
 }
 
 const PALETTE = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
@@ -29,8 +31,9 @@ function getDomain(url: string): string {
   }
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDelete }: Props) {
+export function BookmarkCard({ bookmark, onEdit, onDelete, onView }: Props) {
   const [faviconError, setFaviconError] = useState(false)
+  const [copied, copy] = useCopyToClipboard()
 
   const domain = getDomain(bookmark.url)
   const domainColor = getDomainColor(bookmark.url)
@@ -40,6 +43,10 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: Props) {
     if (window.confirm(`¿Eliminar el bookmark "${bookmark.title}"?`)) {
       onDelete(bookmark.id)
     }
+  }
+
+  const handleCopy = () => {
+    copy(bookmark.url)
   }
 
   const FaviconPlaceholder = (
@@ -87,6 +94,24 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: Props) {
 
             {/* Action buttons — visible on hover */}
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+              <button
+                onClick={() => onView(bookmark)}
+                aria-label="Ver bookmark"
+                className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={handleCopy}
+                aria-label="Copiar URL"
+                className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
+              >
+                {copied ? (
+                  <Check className="w-3.5 h-3.5 text-green-500" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
+              </button>
               <button
                 onClick={() => onEdit(bookmark)}
                 aria-label="Editar bookmark"

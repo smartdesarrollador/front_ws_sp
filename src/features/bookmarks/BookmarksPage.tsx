@@ -18,6 +18,7 @@ import { parseBookmarks } from '@/lib/import'
 import { BookmarkFilters, EMPTY_FILTERS } from './components/BookmarkFilters'
 import { BookmarkCard } from './components/BookmarkCard'
 import { BookmarkModal } from './components/BookmarkModal'
+import { BookmarkViewModal } from './components/BookmarkViewModal'
 import { ManageCollectionsModal } from './components/ManageCollectionsModal'
 import type { Bookmark as BookmarkType, BookmarkFiltersState } from './types'
 
@@ -30,6 +31,7 @@ export default function BookmarksPage() {
   const [showModal, setShowModal] = useState(false)
   const [showCollectionsModal, setShowCollectionsModal] = useState(false)
   const [bookmarkToEdit, setBookmarkToEdit] = useState<BookmarkType | null>(null)
+  const [viewingBookmark, setViewingBookmark] = useState<BookmarkType | null>(null)
   const [filters, setFilters] = useState<BookmarkFiltersState>(EMPTY_FILTERS)
   const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1)
 
@@ -110,6 +112,14 @@ export default function BookmarksPage() {
   const handleCloseModal = () => {
     setShowModal(false)
     setBookmarkToEdit(null)
+  }
+
+  const handleView = (bookmark: BookmarkType) => {
+    setViewingBookmark(bookmark)
+  }
+
+  const handleCloseViewModal = () => {
+    setViewingBookmark(null)
   }
 
   const exportFormats: ExportFormat[] = [
@@ -274,6 +284,7 @@ export default function BookmarksPage() {
               bookmark={bookmark}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onView={handleView}
             />
           ))}
         </div>
@@ -290,6 +301,11 @@ export default function BookmarksPage() {
 
       {/* Modal */}
       {showModal && <BookmarkModal bookmark={bookmarkToEdit} onClose={handleCloseModal} />}
+      <BookmarkViewModal
+        bookmark={viewingBookmark}
+        open={!!viewingBookmark}
+        onClose={handleCloseViewModal}
+      />
       {showCollectionsModal && (
         <ManageCollectionsModal onClose={() => setShowCollectionsModal(false)} />
       )}
