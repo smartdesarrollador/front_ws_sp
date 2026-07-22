@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MessageComposer } from '../components/MessageComposer'
 
-function setup(onSend = vi.fn(), onTyping = vi.fn()) {
+function setup(onSend = vi.fn(), onTyping = vi.fn(), maxFileMb?: number | null) {
   render(
     <MessageComposer
       replyTo={null}
@@ -10,6 +10,7 @@ function setup(onSend = vi.fn(), onTyping = vi.fn()) {
       onSend={onSend}
       onTyping={onTyping}
       isSending={false}
+      maxFileMb={maxFileMb}
     />,
   )
   return { onSend, onTyping }
@@ -38,10 +39,31 @@ describe('MessageComposer', () => {
     expect(onSend).toHaveBeenCalledWith('', file)
   })
 
-  it('rejects a file larger than 10 MB', () => {
+  it('rejects a file over the plan limit with a dynamic message', () => {
+    setup(vi.fn(), vi.fn(), 5)
+    const big = new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'big.pdf')
+    fireEvent.change(screen.getByTestId('chat-file-input'), { target: { files: [big] } })
+    expect(screen.getByText('El archivo supera los 5 MB')).toBeInTheDocument()
+  })
+
+  it('accepts a file that fits a higher plan limit', () => {
+    const { onSend } = setup(vi.fn(), vi.fn(), 25)
+    const file = new File([new Uint8Array(10 * 1024 * 1024)], 'doc.pdf')
+    fireEvent.change(screen.getByTestId('chat-file-input'), { target: { files: [file] } })
+    expect(screen.getByText('doc.pdf')).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('Enviar mensaje'))
+    expect(onSend).toHaveBeenCalledWith('', file)
+  })
+
+  it('falls back to a default limit when none is provided', () => {
     setup()
-    const big = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'big.bin')
+    const big = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'big.pdf')
     fireEvent.change(screen.getByTestId('chat-file-input'), { target: { files: [big] } })
     expect(screen.getByText('El archivo supera los 10 MB')).toBeInTheDocument()
+  })
+
+  it('restricts the file input with an accept attribute', () => {
+    setup()
+    expect(screen.getByTestId('chat-file-input')).toHaveAttribute('accept')
   })
 })

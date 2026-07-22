@@ -10,6 +10,8 @@ interface FeaturesResponse {
     storage_gb: number | null
     api_calls_per_month: number | null
     vault_items: number | null
+    image_upload_mb: number | null
+    file_upload_mb: number | null
   }
 }
 

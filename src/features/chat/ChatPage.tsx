@@ -19,6 +19,7 @@ import { ConnectionsModal } from './components/ConnectionsModal'
 import { GroupInfoPanel } from './components/GroupInfoPanel'
 import { Avatar } from './components/Avatar'
 import { ChatToast, type ToastState } from './components/ChatToast'
+import { useFeatureGate } from '@/hooks/useFeatureGate'
 import type { ConvertTarget, CreateConversationRequest, Message } from './types'
 
 const CONVERT_LABELS: Record<ConvertTarget, string> = {
@@ -35,6 +36,7 @@ export default function ChatPage() {
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [toast, setToast] = useState<ToastState | null>(null)
 
+  const { getLimit } = useFeatureGate()
   const { connected, typing, onlineUserIds, sendTyping } = useChatSocket()
   const { data: convData, isLoading: loadingConvs } = useConversations(connected)
   const conversations = convData?.conversations ?? []
@@ -197,6 +199,7 @@ export default function ChatPage() {
               onSend={handleSend}
               onTyping={() => activeId && sendTyping(activeId)}
               isSending={sendMessage.isPending}
+              maxFileMb={getLimit('file_upload_mb')}
             />
           </>
         ) : (
