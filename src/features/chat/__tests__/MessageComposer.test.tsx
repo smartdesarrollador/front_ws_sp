@@ -2,7 +2,12 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MessageComposer } from '../components/MessageComposer'
 
-function setup(onSend = vi.fn(), onTyping = vi.fn(), maxFileMb?: number | null) {
+function setup(
+  onSend = vi.fn(),
+  onTyping = vi.fn(),
+  maxFileMb?: number | null,
+  canUpgrade?: boolean,
+) {
   render(
     <MessageComposer
       replyTo={null}
@@ -11,6 +16,7 @@ function setup(onSend = vi.fn(), onTyping = vi.fn(), maxFileMb?: number | null) 
       onTyping={onTyping}
       isSending={false}
       maxFileMb={maxFileMb}
+      canUpgrade={canUpgrade}
     />,
   )
   return { onSend, onTyping }
@@ -39,11 +45,23 @@ describe('MessageComposer', () => {
     expect(onSend).toHaveBeenCalledWith('', file)
   })
 
-  it('rejects a file over the plan limit with a dynamic message', () => {
-    setup(vi.fn(), vi.fn(), 5)
+  it('rejects a file over the plan limit with an upgrade CTA when upgrade is possible', () => {
+    setup(vi.fn(), vi.fn(), 5, true)
     const big = new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'big.pdf')
     fireEvent.change(screen.getByTestId('chat-file-input'), { target: { files: [big] } })
-    expect(screen.getByText('El archivo supera los 5 MB')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'El archivo supera el límite de 5 MB de tu plan. Cambia a un plan superior para aumentar la capacidad.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('omits the upgrade CTA on the top plan (canUpgrade=false)', () => {
+    setup(vi.fn(), vi.fn(), 100, false)
+    const big = new File([new Uint8Array(100 * 1024 * 1024 + 1)], 'big.pdf')
+    fireEvent.change(screen.getByTestId('chat-file-input'), { target: { files: [big] } })
+    expect(screen.getByText('El archivo supera el límite de 100 MB.')).toBeInTheDocument()
+    expect(screen.queryByText(/Cambia a un plan superior/)).toBeNull()
   })
 
   it('accepts a file that fits a higher plan limit', () => {
@@ -55,11 +73,11 @@ describe('MessageComposer', () => {
     expect(onSend).toHaveBeenCalledWith('', file)
   })
 
-  it('falls back to a default limit when none is provided', () => {
+  it('falls back to a default limit (and generic message) when none is provided', () => {
     setup()
     const big = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'big.pdf')
     fireEvent.change(screen.getByTestId('chat-file-input'), { target: { files: [big] } })
-    expect(screen.getByText('El archivo supera los 10 MB')).toBeInTheDocument()
+    expect(screen.getByText('El archivo supera el límite de 10 MB.')).toBeInTheDocument()
   })
 
   it('restricts the file input with an accept attribute', () => {

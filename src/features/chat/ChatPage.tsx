@@ -36,7 +36,7 @@ export default function ChatPage() {
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [toast, setToast] = useState<ToastState | null>(null)
 
-  const { getLimit } = useFeatureGate()
+  const { getLimit, plan } = useFeatureGate()
   const { connected, typing, onlineUserIds, sendTyping } = useChatSocket()
   const { data: convData, isLoading: loadingConvs } = useConversations(connected)
   const conversations = convData?.conversations ?? []
@@ -200,6 +200,7 @@ export default function ChatPage() {
               onTyping={() => activeId && sendTyping(activeId)}
               isSending={sendMessage.isPending}
               maxFileMb={getLimit('file_upload_mb')}
+              canUpgrade={plan !== undefined && plan !== 'enterprise'}
             />
           </>
         ) : (
