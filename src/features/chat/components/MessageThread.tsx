@@ -8,6 +8,7 @@ interface MessageThreadProps {
   isLoading: boolean
   onReply: (message: Message) => void
   onConvert: (message: Message, target: ConvertTarget) => void
+  onDelete: (message: Message) => void
 }
 
 interface DayGroup {
@@ -16,7 +17,7 @@ interface DayGroup {
   items: Message[]
 }
 
-export function MessageThread({ messages, isLoading, onReply, onConvert }: MessageThreadProps) {
+export function MessageThread({ messages, isLoading, onReply, onConvert, onDelete }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const groups = useMemo<DayGroup[]>(() => {
@@ -76,6 +77,7 @@ export function MessageThread({ messages, isLoading, onReply, onConvert }: Messa
               showSender={idx === 0 || group.items[idx - 1].sender.id !== message.sender.id}
               onReply={onReply}
               onConvert={onConvert}
+              onDelete={onDelete}
             />
           ))}
         </div>

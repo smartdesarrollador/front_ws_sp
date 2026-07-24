@@ -7,6 +7,7 @@ import { useSendMessage } from './hooks/useSendMessage'
 import { useCreateConversation } from './hooks/useCreateConversation'
 import { useMarkRead } from './hooks/useMarkRead'
 import { useConvertMessage } from './hooks/useConvertMessage'
+import { useDeleteMessage } from './hooks/useDeleteMessage'
 import { useConversationDetail } from './hooks/useConversationDetail'
 import { useLeaveConversation } from './hooks/useLeaveConversation'
 import { useSelfConversation } from './hooks/useSelfConversation'
@@ -47,6 +48,7 @@ export default function ChatPage() {
   const createConversation = useCreateConversation()
   const markRead = useMarkRead()
   const convertMessage = useConvertMessage()
+  const deleteMessage = useDeleteMessage()
   const leaveConversation = useLeaveConversation()
   const selfConversation = useSelfConversation()
 
@@ -73,7 +75,18 @@ export default function ChatPage() {
     if (!activeId) return
     sendMessage.mutate(
       { conversation: activeId, content, reply_to: replyTo?.id, file },
-      { onSuccess: () => setReplyTo(null) },
+      {
+        onSuccess: () => setReplyTo(null),
+        onError: (error) => {
+          const res = error instanceof AxiosError ? error.response : undefined
+          const backendMsg = (res?.data as { error?: { message?: string } } | undefined)?.error?.message
+          const message =
+            res?.status === 402
+              ? backendMsg ?? 'Has alcanzado el límite de almacenamiento de tu plan.'
+              : 'No se pudo enviar el mensaje'
+          setToast({ message, variant: 'error' })
+        },
+      },
     )
   }
 
@@ -123,6 +136,18 @@ export default function ChatPage() {
                 : 'No se pudo convertir el mensaje'
           setToast({ message, variant: 'error' })
         },
+      },
+    )
+  }
+
+  const handleDelete = (message: Message) => {
+    if (!activeId) return
+    if (!window.confirm('¿Eliminar este mensaje? Se liberará el espacio de su adjunto.')) return
+    deleteMessage.mutate(
+      { id: message.id, conversation: activeId },
+      {
+        onSuccess: () => setToast({ message: 'Mensaje eliminado', variant: 'success' }),
+        onError: () => setToast({ message: 'No se pudo eliminar el mensaje', variant: 'error' }),
       },
     )
   }
@@ -191,6 +216,7 @@ export default function ChatPage() {
               isLoading={loadingMessages}
               onReply={setReplyTo}
               onConvert={handleConvert}
+              onDelete={handleDelete}
             />
 
             <MessageComposer

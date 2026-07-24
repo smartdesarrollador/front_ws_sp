@@ -1,8 +1,9 @@
-import { FileText, UserPlus, Code2 } from 'lucide-react'
+import { FileText, UserPlus, Code2, Trash2 } from 'lucide-react'
 import type { ConvertTarget } from '../types'
 
 interface ConvertMenuProps {
   onConvert: (target: ConvertTarget) => void
+  onDelete?: () => void
   disabled?: boolean
 }
 
@@ -12,7 +13,7 @@ const OPTIONS: { target: ConvertTarget; label: string; icon: typeof FileText }[]
   { target: 'snippet', label: 'Convertir a Snippet', icon: Code2 },
 ]
 
-export function ConvertMenu({ onConvert, disabled = false }: ConvertMenuProps) {
+export function ConvertMenu({ onConvert, onDelete, disabled = false }: ConvertMenuProps) {
   return (
     <div
       role="menu"
@@ -31,6 +32,21 @@ export function ConvertMenu({ onConvert, disabled = false }: ConvertMenuProps) {
           {label}
         </button>
       ))}
+      {onDelete && (
+        <>
+          <div className="my-1 border-t border-gray-200 dark:border-gray-700" />
+          <button
+            type="button"
+            role="menuitem"
+            disabled={disabled}
+            onClick={onDelete}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" />
+            Eliminar mensaje
+          </button>
+        </>
+      )}
     </div>
   )
 }

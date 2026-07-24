@@ -9,15 +9,21 @@ interface MessageBubbleProps {
   showSender: boolean
   onReply: (message: Message) => void
   onConvert: (message: Message, target: ConvertTarget) => void
+  onDelete: (message: Message) => void
 }
 
-export function MessageBubble({ message, showSender, onReply, onConvert }: MessageBubbleProps) {
+export function MessageBubble({ message, showSender, onReply, onConvert, onDelete }: MessageBubbleProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const mine = message.is_mine
 
   const handleConvert = (target: ConvertTarget) => {
     setMenuOpen(false)
     onConvert(message, target)
+  }
+
+  const handleDelete = () => {
+    setMenuOpen(false)
+    onDelete(message)
   }
 
   return (
@@ -41,7 +47,10 @@ export function MessageBubble({ message, showSender, onReply, onConvert }: Messa
               </button>
               {menuOpen && (
                 <div className="absolute right-0 top-6">
-                  <ConvertMenu onConvert={handleConvert} />
+                  <ConvertMenu
+                    onConvert={handleConvert}
+                    onDelete={message.is_deleted ? undefined : handleDelete}
+                  />
                 </div>
               )}
             </div>
